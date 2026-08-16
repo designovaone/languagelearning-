@@ -1,0 +1,50 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# builds
+/.next/
+/out/
+/build
+/dist
+
+# testing
+/coverage
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# --- PRIVACY: local-only, never published ------------------------------------
+# This repo is public. Everything below stays on disk.
+
+# Working memory + session notes (contain real names, family context, credentials talk)
+/MEMORY.md
+/CLAUDESESSIONS/
+
+# Seed vocabulary. Scraped third-party course content, and the filenames carry
+# real names. The seeding *script* is public; the data is not.
+/seed/
+*.csv
+
+# Local database dumps and cached audio
+/backups/
+/public/audio/
