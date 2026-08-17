@@ -12,6 +12,8 @@ Everything here is current and decided. Where something is genuinely undecided i
 > clone, and it claims authority over every other document. A plan that describes something other
 > than what was built will be faithfully implemented by the next person, and they will undo the fix.
 > Milestones carry an **As built** table when the delivery differed from the spec above it.
+> Gaps and deferred work live in [`ISSUES.md`](ISSUES.md) — this file says what gets built, that
+> one says what is not yet true.
 
 ---
 
