@@ -1,0 +1,46 @@
+name: CI
+
+# Needs no secrets, on purpose. Every layer that runs here — typecheck, lint,
+# unit, database, privacy — works offline: PGlite is real Postgres in-process,
+# and the AI evaluation suites are opt-in and run locally (PLAN.md §12).
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit, database and API tests
+        run: npm test
+
+      - name: Timezone-sensitive suites under three server timezones
+        run: npm run test:tz
+
+      - name: Privacy guard
+        run: npm run test:privacy

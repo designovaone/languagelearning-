@@ -1,12 +1,20 @@
 {
-  "name": "lang",
+  "name": "languagelearning",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests tests/unit tests/db tests/api",
+    "test:watch": "vitest tests/unit tests/db tests/api",
+    "test:coverage": "vitest run --coverage --passWithNoTests tests/unit tests/db tests/api",
+    "test:tz": "for tz in UTC Europe/Berlin Pacific/Auckland; do echo \"--- TZ=$tz\"; TZ=$tz vitest run tz.test || exit 1; done",
+    "test:privacy": "vitest run tests/privacy",
+    "test:e2e": "playwright test",
+    "eval": "vitest run --passWithNoTests tests/eval"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -20,14 +28,24 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.5",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/coverage-v8": "^4.1.10",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
+    "fast-check": "^4.9.0",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.10"
   }
 }

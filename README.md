@@ -166,6 +166,34 @@ rather than a cutoff line.
 It repeats every few months, which turns onboarding into a progress measure:
 *you knew ~2,800 words in August, ~3,900 in November.*
 
+## Development
+
+```bash
+npm install
+npm run dev            # the app (nothing to see yet)
+
+npm test               # unit + database + API suites
+npm run test:tz        # timezone-sensitive suites under three server timezones
+npm run test:privacy   # the privacy guard
+npm run typecheck
+npm run lint
+```
+
+The test harness went in before the first feature, deliberately. Three pieces of it
+are load-bearing:
+
+- **Database tests run real Postgres in-process** ([PGlite](https://pglite.dev/)) — no
+  Docker, no network, nothing to configure, and they run in CI with no secrets.
+- **The wall clock is read in exactly one file** (`lib/time/clock.ts`). Everything else
+  takes `now: Date` as an argument, which keeps scheduling logic pure and replayable.
+  A lint rule and a grep test both enforce it.
+- **A privacy guard** scans everything git would publish for personal identifiers,
+  third-party hosts and credential shapes, and fails the build on a hit. It checks
+  untracked files too, because a file is publishable the moment it exists.
+
+Each guard also tests that it still detects what it claims to detect. A check that
+passes because it looked at nothing is worse than no check.
+
 ## Why this is public
 
 The build is being written up as it happens — what worked, what was over-engineered,

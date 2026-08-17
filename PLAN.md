@@ -6,6 +6,13 @@ what gets built and in what order. It supersedes all earlier planning notes.
 Everything here is current and decided. Where something is genuinely undecided it appears in
 [§16 Open questions](#16-open-questions) and nowhere else.
 
+> **Keeping it true.** When the build departs from this document — a better mechanism, a hole found
+> while implementing — **amend the affected section in the same session, in place.** Not in a
+> changelog, not in a session note: this file is the only project record that survives a fresh
+> clone, and it claims authority over every other document. A plan that describes something other
+> than what was built will be faithfully implemented by the next person, and they will undo the fix.
+> Milestones carry an **As built** table when the delivery differed from the spec above it.
+
 ---
 
 ## Contents
@@ -63,8 +70,8 @@ Two measurements make this checkable rather than a matter of opinion:
 
 ### Current state
 
-Repo scaffolded with Next.js, one bootstrap commit. **No application code, no tests, no schema.**
-This plan starts from that point.
+**M0 complete (2026-08-17).** Test harness, clock discipline, privacy guard and CI are in place and
+green. **No schema, no auth, no application code yet.** M1 is next.
 
 ---
 
@@ -629,7 +636,7 @@ Roughly 13 focused days, plus a two-week pause. **The stop after M7 is the impor
 everything up to it is a complete, usable replacement; everything after needs real mistakes to exist
 first.
 
-### M0 — Harness before features · ½ day
+### M0 — Harness before features · ½ day ✅ **done 2026-08-17**
 
 The test suite goes in before the first feature, or it never gets written.
 
@@ -639,6 +646,18 @@ The test suite goes in before the first feature, or it never gets written.
 - `lib/time/clock.ts` + the lint rule banning `new Date()` elsewhere
 - CI: typecheck, lint, unit, db, privacy — no secrets needed
 - **Exit:** `npm test` green, privacy guard active
+
+**As built**, with the amendments folded into §12 and §13 above rather than left as a footnote:
+
+| | |
+|---|---|
+| `test:tz` | selects `*.tz.test.ts`, fails on an empty set (§12 rule 2) |
+| Privacy guard | scans untracked-not-ignored files too (§12 Layer 6) |
+| Guards | each proves it still detects what it claims (§12 rule 3) |
+| `vite-tsconfig-paths` | dropped; Vite resolves tsconfig paths natively |
+| `db:*`, `corpus:*` | deferred to M1/M2 (§13) |
+| PGlite | verified to carry full tzdata — both 2026 European DST transitions asserted. Without it every timezone test below would pass while measuring nothing |
+| `lib/time/clock.ts` | `Clock`, `systemClock`, `fixedClock`, `steppingClock` |
 
 ### M1 — Schema, auth, i18n · 1 day
 
@@ -731,8 +750,10 @@ the queue, the streak, timezone handling, assessment scoring, and the AI failure
 ### Stack
 
 `vitest` · `@vitejs/plugin-react` · `jsdom` · `@testing-library/react` · `@testing-library/dom` ·
-`vite-tsconfig-paths` · `@vitest/coverage-v8` · `@electric-sql/pglite` · `fast-check` ·
-`@playwright/test`
+`@vitest/coverage-v8` · `@electric-sql/pglite` · `fast-check` · `@playwright/test`
+
+Config lives in `vitest.config.mts`. Path aliases come from `resolve.tsconfigPaths: true` — Vite
+resolves `tsconfig.json` paths natively, so no `vite-tsconfig-paths` plugin.
 
 ### Layer 1 — Pure logic
 
@@ -805,21 +826,49 @@ connection limits or cold starts. One manual smoke test against a real dev branc
 
 ### Layer 6 — Privacy guard
 
-`tests/privacy/no-leak.test.ts`, run in CI on every push. Scans **git-tracked files only** for real
-first names, seed filenames, third-party CDN hosts, API-key shapes, and any `.csv` outside
-`tests/fixtures/`. Fails the build on a hit.
+`tests/privacy/no-leak.test.ts`, run in CI on every push. Scans for real first names, seed filenames,
+third-party CDN hosts, API-key shapes, and any `.csv` outside `tests/fixtures/`. Fails the build on a
+hit.
+
+**Scope: everything git would publish — tracked files *and* untracked files no ignore rule covers.**
+Tracked-only would leave a brand-new file exempt right up until someone stages it, which is exactly
+the moment nobody reads the diff. `git ls-files --cached --others --exclude-standard`.
+
+Three rules about how the guard is written, because a guard is only as good as its weakest habit:
+
+1. **The name list is base64 in the tracked file.** Not security — anyone can decode it — but the
+   plaintext is not sitting in a public repo to be indexed, *and the guard still runs in CI with no
+   secrets*. A guard that needs a secret to work is a guard that quietly passes when the secret is
+   missing. Working beats hidden.
+2. **Zero path exemptions.** Every pattern is an escaped regex source, so the guard never matches
+   itself and needs no self-exemption. An exemption is a hole in the one file most likely to contain
+   an example of a forbidden thing.
+3. **Every rule is tested against a canary** that must trip it. A typo that disables a rule fails
+   the suite instead of passing forever.
 
 The defence has to be structural. Anything depending on attention eventually fails.
 
 ### Discipline
 
 1. **No `new Date()` outside `lib/time/clock.ts`.** Every pure function takes `now: Date`. Enforced
-   by lint and a grep test. Fake timers are a workaround for a design smell
-2. **`npm run test:tz`** runs streak and activity suites under `TZ=UTC`, `TZ=Europe/Berlin` and
-   `TZ=Pacific/Auckland`. If a result changes, the bug is found before a learner loses a streak
-3. **Coverage thresholds only where meaningful:** 90% lines on `lib/fsrs`, `lib/study`,
-   `lib/streak`, `lib/assessment`. No global target
-4. **Fixtures small and committed:** a 10-row corpus, a 500-row review log, 40 labelled answers
+   by lint *and* a grep test — a lint rule can be silenced with an inline comment, a grep test
+   cannot. Only the zero-argument forms are banned; `new Date(value)` parses and is fine anywhere.
+   Fake timers are a workaround for a design smell
+2. **`npm run test:tz`** runs the timezone-sensitive suites under `TZ=UTC`, `TZ=Europe/Berlin` and
+   `TZ=Pacific/Auckland`. If a result changes, the bug is found before a learner loses a streak.
+
+   **The suite is selected by filename — `*.tz.test.ts` — and the script has no
+   `--passWithNoTests`, so an empty set fails.** Selecting by directory instead would print green
+   while running nothing until the streak code lands, and would silently stop covering any file
+   that got moved. **A check whose "pass" and whose "did nothing" look identical is not a check** —
+   the rule applies to this suite as much as to the app
+3. **Guards prove they are still alive.** Each privacy rule is tested against a canary that must
+   trip it; the wall-clock grep tests its own patterns; both assert they found files to scan.
+   Rule 2's shape, generalised
+4. **Coverage thresholds only where meaningful:** 90% lines on `lib/fsrs`, `lib/study`,
+   `lib/streak`, `lib/assessment`. No global target. They are added with the code they guard, not
+   before it — a threshold over an empty directory is another vacuous pass
+5. **Fixtures small and committed:** a 10-row corpus, a 500-row review log, 40 labelled answers
 
 ---
 
@@ -834,15 +883,18 @@ start        next start
 lint         eslint
 typecheck    tsc --noEmit
 test         vitest run tests/unit tests/db tests/api
-test:tz      streak + activity suites under three timezones
+test:tz      the *.tz.test.ts suites under UTC, Europe/Berlin, Pacific/Auckland
 test:e2e     playwright test
 test:privacy vitest run tests/privacy
 eval         opt-in AI evaluation suites (hits the real model)
-db:generate  drizzle-kit generate
-db:migrate   drizzle-kit migrate
-corpus:build pipeline stages 1–8
-corpus:load  scripts/load-corpus.ts
+db:generate  drizzle-kit generate          ← added at M1
+db:migrate   drizzle-kit migrate           ← added at M1
+corpus:build pipeline stages 1–8           ← added at M2
+corpus:load  scripts/load-corpus.ts        ← added at M2
 ```
+
+**A script is added in the milestone that gives it something to point at**, never earlier. An
+existing script that runs and does nothing gets trusted; a missing one gets written.
 
 ### Environment
 

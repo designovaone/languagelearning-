@@ -40,11 +40,16 @@ next-env.d.ts
 /MEMORY.md
 /CLAUDESESSIONS/
 
-# Seed vocabulary. Scraped third-party course content, and the filenames carry
-# real names. The seeding *script* is public; the data is not.
+# Pipeline inputs and intermediate artifacts. Bulk content, and some filenames
+# carry real names. The pipeline *code* is public; the raw data is not.
 /seed/
 *.csv
+# ...but committed test fixtures must survive the blanket rule above.
+!tests/fixtures/*.csv
 
-# Local database dumps and cached audio
+# Local database dumps
 /backups/
-/public/audio/
+
+# Generated audio lives in blob storage, never on disk in the repo — Vercel has
+# no writable filesystem and public/ is baked from git. See PLAN.md §5.
+/pipeline/out/
