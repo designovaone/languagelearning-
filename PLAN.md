@@ -291,10 +291,28 @@ tie-breaker.**
 | Target language | Curated list | Size | Grading | Licence |
 |---|---|---|---|---|
 | **English** | [CEFR-J Vocabulary Profile v1.5](https://github.com/openlanguageprofiles/olp-en-cefrj) + Octanove C1/C2 profile — Tono Laboratory, Tokyo University of Foreign Studies | ~7,000 | **A1 → C2** | CC BY-SA 4.0; explicitly *"research and commercial purposes with no charge, provided that you cite the dataset properly"* ✅ |
-| **Italian** | [Nuovo vocabolario di base](https://github.com/pettarin/nvdb) (De Mauro & Chiari), machine-readable extraction | ~7,000 | **FO** fondamentale ≈2,000 → **AU** alto uso ≈3,000 → **AD** alta disponibilità ≈2,000 | Extraction released **public domain**; underlying selection is editorial — see caveat ⚠️ |
+| **Italian** | [Nuovo vocabolario di base](https://github.com/pettarin/nvdb) (De Mauro & Chiari), **read from the published PDF** — see below | ~7,250 | **FO** fondamentale 2,020 → **AU** alto uso 3,000 → **AD** alta disponibilità 2,229 | Extraction released **public domain**; underlying selection is editorial — see caveat ⚠️ |
 
 Both lists are ~7,000 entries, comfortably above the 5,000 target. **The curated lists alone are
 enough**; frequency is no longer the source of the deck.
+
+### The Italian bands exist only as typography
+
+**Verified at M2, and it changes how stage 1 works.** The NVdB encodes its three usage bands as
+*type style* — the article that accompanies the list says so plainly: fondamentale in bold, alto uso
+in regular, alta disponibilità in italic. **Every plain-text extraction therefore loses the band**,
+including the public-domain one this plan cites: `nvdb.full.txt` carries all 7,248 lemmas and zero
+band markers.
+
+Since the band *is* the learning order for Italian (§5, "what order to learn them in"), stage 1
+reads the fonts back out of the published PDF rather than degrading to frequency. Recovered counts
+land within a few percent of the figures the authors state, which is the check that it worked:
+FO 2,020 against "circa duemila", AU 3,000 against "circa tremila", AD 2,229 against "circa 2.500".
+
+The stage refuses to write its artifact if those counts drift or if too many styled headwords fail
+to match an entry. That guard earned itself immediately: it caught the PDF's soft-hyphen line
+breaks, where `acceca-` and `mento` are separate spans, which would otherwise have silently dropped
+158 words out of their band and into the default one.
 
 ### Supporting sources
 
@@ -343,7 +361,7 @@ Each stage writes a checked-in intermediate artifact, so a re-run never repeats 
 
 | | Stage | Notes |
 |---|---|---|
-| 1 | **Curated list** | CEFR-J (English) / NVdB (Italian) → the word set and its band. This is the spine |
+| 1 | **Curated list** ✅ | CEFR-J + Octanove (English, 9,777 lemma/pos pairs A1–C2) / NVdB (Italian, 7,249 lemmas FO/AU/AD read from the PDF) → the word set and its band. This is the spine |
 | 1b | **Frequency** | Blend FrequencyWords with a second, Wikipedia-derived corpus and average the ranks. Used to order *within* a band, to top up beyond the curated list, and for assessment sampling — **not** as the source of the deck |
 | 2 | **Lemmatise** | spaCy. Collapse *sono / è / siamo* into one `essere` with inflections attached. **This is the genuinely fiddly step** — expect a day on Italian clitics and German separable verbs |
 | 3 | **Filter** | Drop proper nouns, numerals, fragments, and a profanity blocklist. Much lighter than before: a curated list arrives clean |

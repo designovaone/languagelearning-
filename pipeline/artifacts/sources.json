@@ -1,0 +1,26 @@
+{
+  "cefr-j": {
+    "attribution": "Tono Laboratory, Tokyo University of Foreign Studies",
+    "commercial": "yes, with citation",
+    "license": "CC BY-SA 4.0",
+    "name": "CEFR-J Vocabulary Profile v1.5",
+    "note": "Levels A1-B2.",
+    "url": "https://github.com/openlanguageprofiles/olp-en-cefrj"
+  },
+  "nvdb": {
+    "attribution": "Tullio De Mauro and Isabella Chiari, with Francesca Ferrucci; machine-readable extraction by Alberto Pettarin",
+    "commercial": "extraction yes; the underlying selection is editorial - see PLAN.md §5",
+    "license": "Public Domain (extraction)",
+    "name": "Nuovo vocabolario di base della lingua italiana (2016)",
+    "note": "Usage bands FO/AU/AD are recovered from the PDF typography; the plain-text extraction does not carry them.",
+    "url": "https://github.com/pettarin/nvdb"
+  },
+  "octanove": {
+    "attribution": "Octanove Labs",
+    "commercial": "yes, with citation",
+    "license": "CC BY-SA 4.0",
+    "name": "Octanove Vocabulary Profile C1/C2 v1.0",
+    "note": "Levels C1-C2, distributed alongside CEFR-J.",
+    "url": "https://github.com/openlanguageprofiles/olp-en-cefrj"
+  }
+}

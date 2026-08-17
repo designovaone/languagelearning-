@@ -1,0 +1,4 @@
+# The pipeline runs once, offline, on a laptop (PLAN.md §5).
+# PyMuPDF is needed because the Italian usage bands exist only as typography
+# in the published PDF — see pipeline/stages/01_italian_nvdb.py.
+pymupdf>=1.24

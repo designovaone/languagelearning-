@@ -53,3 +53,11 @@ next-env.d.ts
 # Generated audio lives in blob storage, never on disk in the repo — Vercel has
 # no writable filesystem and public/ is baked from git. See PLAN.md §5.
 /pipeline/out/
+
+# Raw pipeline downloads: large, unmodified, and re-fetchable with
+# pipeline/stages/00_fetch_sources.sh. The derived artifacts ARE checked in.
+/pipeline/raw/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
