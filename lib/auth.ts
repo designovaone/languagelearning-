@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { assertInviteValid, consumeInvite, InviteError } from "@/lib/auth/invite";
 import { getDb } from "@/lib/db";
 import * as authSchema from "@/lib/db/auth-schema";
-import { profiles } from "@/lib/db/schema";
+import { courses, enrollments, profiles } from "@/lib/db/schema";
 import { systemClock, type Clock } from "@/lib/time/clock";
 
 /**
@@ -110,15 +110,37 @@ export function createAuth(db: any, options: CreateAuthOptions = {}) {
               });
             }
 
+            const uiLocale = readLocale(body.uiLocale, profileDefaults.uiLocale);
+
             await db.insert(profiles).values({
               userId: createdUser.id,
-              uiLocale: readLocale(body.uiLocale, profileDefaults.uiLocale),
-              baseLang: readLocale(body.baseLang, profileDefaults.baseLang),
+              uiLocale,
+              baseLang: readLocale(body.baseLang, uiLocale),
               timezone:
                 typeof body.timezone === "string" && body.timezone.length > 0
                   ? body.timezone
                   : profileDefaults.timezone,
             });
+
+            // Enrol, or the learner lands on a dashboard with no course and
+            // nothing to study. The slug is checked against the courses that
+            // actually exist rather than trusted from the request body.
+            const requested =
+              typeof body.courseSlug === "string" ? body.courseSlug : "";
+            const available = await db
+              .select({ id: courses.id, slug: courses.slug })
+              .from(courses);
+            const chosen =
+              available.find((c: { slug: string }) => c.slug === requested) ??
+              available.find(
+                (c: { slug: string }) => c.slug === defaultCourseFor(uiLocale),
+              );
+            if (chosen) {
+              await db
+                .insert(enrollments)
+                .values({ userId: createdUser.id, courseId: chosen.id })
+                .onConflictDoNothing();
+            }
           },
         },
       },
@@ -128,6 +150,15 @@ export function createAuth(db: any, options: CreateAuthOptions = {}) {
 
 function readLocale(value: unknown, fallback: string): string {
   return value === "en" || value === "de" ? value : fallback;
+}
+
+/**
+ * A learner reading the interface in German is learning English from German;
+ * one reading it in English is learning Italian. Only a fallback — the signup
+ * form asks directly.
+ */
+function defaultCourseFor(uiLocale: string): string {
+  return uiLocale === "de" ? "en-from-de" : "it-from-en";
 }
 
 export type Auth = ReturnType<typeof createAuth>;

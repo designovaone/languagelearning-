@@ -33,7 +33,7 @@ Rows carry a short `source_id`; `sources.json` holds the full citation and licen
 | 6 | Topic-cluster — one-time AI pass | |
 | 7 | Sentences (Tatoeba) | |
 | 8 | Audio (Kokoro-82M, local) | |
-| 9 | Load into the database | |
+| 9 | **Load into the database** — `npm run corpus:load`, idempotent | ✅ |
 
 ## The Italian bands are recovered from the PDF
 

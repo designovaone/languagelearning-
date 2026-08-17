@@ -1,7 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
+import { and, eq } from "drizzle-orm";
+
 import { requireUser } from "@/lib/auth/session";
+import { getDb } from "@/lib/db";
+import { bands, courses, enrollments, words } from "@/lib/db/schema";
 
 /**
  * The dashboard. M1 ships the shell and the session gate; the streak, due
@@ -10,6 +14,32 @@ import { requireUser } from "@/lib/auth/session";
 export default async function DashboardPage() {
   const user = await requireUser();
   const t = await getTranslations();
+
+  // M1 shipped the shell; this is the first thing on it with a real number
+  // behind it. The due count and streak arrive with M4 and M7.
+  const db = getDb();
+  const [enrolled] = await db
+    .select({ slug: courses.slug, name: courses.name, courseId: courses.id })
+    .from(enrollments)
+    .innerJoin(courses, eq(courses.id, enrollments.courseId))
+    .where(and(eq(enrollments.userId, user.id), eq(enrollments.active, true)))
+    .limit(1);
+
+  const deck = enrolled
+    ? await db
+        .select({ band: bands.name, number: bands.number, wordId: words.id })
+        .from(words)
+        .innerJoin(bands, eq(bands.id, words.bandId))
+        .where(eq(words.courseId, enrolled.courseId))
+    : [];
+
+  const byBand = new Map<string, { number: number; count: number }>();
+  for (const row of deck) {
+    const entry = byBand.get(row.band) ?? { number: row.number, count: 0 };
+    entry.count += 1;
+    byBand.set(row.band, entry);
+  }
+  const bandRows = [...byBand.entries()].sort((a, b) => a[1].number - b[1].number);
 
   return (
     <main className="flex flex-col gap-6">
@@ -24,12 +54,31 @@ export default async function DashboardPage() {
 
       <section className="rounded-xl border border-neutral-200 p-5 dark:border-neutral-800">
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
-          {t("dashboard.dueToday")}
+          {enrolled ? enrolled.name : t("errors.notFound")}
         </p>
-        <p className="mt-1 text-3xl font-semibold tabular-nums">—</p>
+        <p className="mt-1 text-3xl font-semibold tabular-nums">
+          {deck.length.toLocaleString()}
+        </p>
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          words in the deck
+        </p>
+
+        {bandRows.length > 0 && (
+          <ul className="mt-4 flex flex-col gap-1 text-sm">
+            {bandRows.map(([name, info]) => (
+              <li key={name} className="flex justify-between tabular-nums">
+                <span className="text-neutral-600 dark:text-neutral-400">
+                  {name}
+                </span>
+                <span>{info.count.toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
         <Link
           href="/study"
-          className="mt-4 block rounded-lg bg-neutral-900 px-4 py-3 text-center font-medium text-white dark:bg-white dark:text-neutral-900"
+          className="mt-5 block rounded-lg bg-neutral-900 px-4 py-3 text-center font-medium text-white dark:bg-white dark:text-neutral-900"
         >
           {t("dashboard.startSession")}
         </Link>

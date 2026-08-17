@@ -12,8 +12,11 @@ into `PLAN.md`. Nothing gets deleted just because it stopped being annoying.
 
 | | | Lands |
 |---|---|---|
-| **No content at all** | `courses`, `bands`, `words` and `sentences` are empty. Signing in works; there is nothing to study. The dashboard shows `—` because there is nothing to count | M2 |
-| **No enrollment on signup** | Signup creates `user` + `profiles` but no `enrollments` row, because there is no course to enrol in yet. A learner is therefore not attached to a course | M2 |
+| ~~No content~~ | **Fixed.** 14,904 words across two courses are live: `it-from-en` 7,083 (FO/AU/AD), `en-from-de` 7,821 (A1–C2). No sentences yet | stage 7 |
+| ~~No enrollment on signup~~ | **Fixed.** The signup form asks which course, and the learner is enrolled. An unknown slug falls back to the locale default rather than being trusted | — |
+| **Words are ordered alphabetically within a band** | Ordering *within* a band should be by frequency (PLAN §5), which needs stage 1b. Until then the deck walks each band A→Z, so a first session is all `a…` words | stage 1b |
+| **Translations are a ranked shortlist, not a chosen sense** | Position 1 is right in spot checks (`dog`→Hund, `casa`→house), but positions 2–3 carry noise: `house`→Haus, Kammer, Kind. Stage 5's one-time AI pass picks the primary sense | stage 5 |
+| **No audio** | `listening` cards cannot render | stage 8 |
 | **No drill** | `/study` renders the "done for today" copy unconditionally. It is a session-gate placeholder, not the loop | M4 |
 | **No assessment** | Nothing seeds FSRS state, so even with content every card would start `New` | M3 |
 

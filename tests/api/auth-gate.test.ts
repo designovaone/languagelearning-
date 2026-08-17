@@ -182,3 +182,81 @@ describe("invite-gated signup", () => {
     expect(profile.uiLocale).toBe("en");
   });
 });
+
+describe("enrollment on signup", () => {
+  let db: TestDatabase;
+  let auth: ReturnType<typeof createAuth>;
+
+  beforeEach(async () => {
+    db = await migratedDb();
+    auth = createAuth(db, {
+      clock: fixedClock(NOW),
+      baseURL: BASE_URL,
+      secret: "test-secret-not-used-outside-tests-0000000000",
+    });
+    await db.insert(schema.invites).values([{ code: "A" }, { code: "B" }, { code: "C" }]);
+    // Two courses exist, as they do in production after the corpus load.
+    await db.insert(schema.courses).values([
+      {
+        id: "it-from-en",
+        slug: "it-from-en",
+        targetLang: "it",
+        baseLang: "en",
+        name: "Italian from English",
+        source: "test",
+        license: "test",
+      },
+      {
+        id: "en-from-de",
+        slug: "en-from-de",
+        targetLang: "en",
+        baseLang: "de",
+        name: "English from German",
+        source: "test",
+        license: "test",
+      },
+    ]);
+  });
+
+  afterEach(async () => {
+    await closeDb(db);
+  });
+
+  async function signUpWith(email: string, body: Record<string, unknown>) {
+    return auth.handler(
+      new Request(`${BASE_URL}/api/auth/sign-up/email`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "T", email, password: PASSWORD, ...body }),
+      }),
+    );
+  }
+
+  it("enrols the learner in the course they picked", async () => {
+    await signUpWith("p@example.test", {
+      inviteCode: "A",
+      courseSlug: "en-from-de",
+      uiLocale: "de",
+    });
+    const [row] = await db.select().from(schema.enrollments);
+    expect(row.courseId).toBe("en-from-de");
+    expect(row.active).toBe(true);
+  });
+
+  it("never leaves a new learner without a course", async () => {
+    // A dashboard with no enrollment has nothing to study and no way to say so.
+    await signUpWith("q@example.test", { inviteCode: "B" });
+    expect(await db.select().from(schema.enrollments)).toHaveLength(1);
+  });
+
+  it("ignores an unknown course slug instead of trusting the request", async () => {
+    await signUpWith("r@example.test", {
+      inviteCode: "C",
+      courseSlug: "../../etc/passwd",
+      uiLocale: "de",
+    });
+    const [row] = await db.select().from(schema.enrollments);
+    // Falls back to the locale default rather than writing what was sent.
+    expect(row.courseId).toBe("en-from-de");
+  });
+});

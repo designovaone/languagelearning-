@@ -9,6 +9,11 @@ import { Field } from "../sign-in/sign-in-form";
 import { signUp } from "@/lib/auth-client";
 import { LOCALES } from "@/lib/i18n/locales";
 
+const COURSE_OPTIONS = [
+  { slug: "it-from-en", label: "Italian, explained in English" },
+  { slug: "en-from-de", label: "Englisch, auf Deutsch erklärt" },
+];
+
 const MIN_PASSWORD_LENGTH = 12;
 
 export function SignUpForm() {
@@ -40,6 +45,7 @@ export function SignUpForm() {
           inviteCode: String(data.get("inviteCode") ?? ""),
           uiLocale,
           baseLang: uiLocale,
+          courseSlug: String(data.get("courseSlug") ?? ""),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         },
       },
@@ -75,6 +81,20 @@ export function SignUpForm() {
           {LOCALES.map((locale) => (
             <option key={locale} value={locale}>
               {locale === "de" ? "Deutsch" : "English"}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium">Course</span>
+        <select
+          name="courseSlug"
+          defaultValue="it-from-en"
+          className="rounded-lg border border-neutral-300 px-3 py-3 text-base dark:border-neutral-700 dark:bg-neutral-900"
+        >
+          {COURSE_OPTIONS.map((course) => (
+            <option key={course.slug} value={course.slug}>
+              {course.label}
             </option>
           ))}
         </select>

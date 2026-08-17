@@ -19,7 +19,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "invite": "tsx scripts/create-invite.ts",
-    "reset-password": "tsx scripts/reset-password.ts"
+    "reset-password": "tsx scripts/reset-password.ts",
+    "corpus:load": "tsx scripts/load-corpus.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
