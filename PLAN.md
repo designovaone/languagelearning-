@@ -70,8 +70,10 @@ Two measurements make this checkable rather than a matter of opinion:
 
 ### Current state
 
-**M0 complete (2026-08-17).** Test harness, clock discipline, privacy guard and CI are in place and
-green. **No schema, no auth, no application code yet.** M1 is next.
+**M0 and M1 complete (2026-08-17).** Test harness, clock discipline, privacy guard and CI; full
+schema live in Neon (Postgres 18, `eu-central-1`); invite-gated auth; i18n in `en` and `de`; GDPR
+export and erasure; admin scripts for invites and password resets. 87 tests green.
+**No content and no drill yet.** M2 (content pipeline) is next.
 
 ---
 
@@ -659,7 +661,7 @@ The test suite goes in before the first feature, or it never gets written.
 | PGlite | verified to carry full tzdata — both 2026 European DST transitions asserted. Without it every timezone test below would pass while measuring nothing |
 | `lib/time/clock.ts` | `Clock`, `systemClock`, `fixedClock`, `steppingClock` |
 
-### M1 — Schema, auth, i18n · 1 day
+### M1 — Schema, auth, i18n · 1 day ✅ **done 2026-08-17**
 
 - **Create the database in `aws-eu-central-1`; set functions to `fra1`.** Two minutes now, a
   dump/restore with downtime later
@@ -670,6 +672,21 @@ The test suite goes in before the first feature, or it never gets written.
 - `/api/me/export` and a hard-delete path
 - **Exit:** migrations apply from empty; signup without a valid invite is refused; both locales have
   identical key sets; logged-out `/study` redirects; the reset script works end to end
+
+**As built.** All five exit criteria are covered by tests, plus the following:
+
+| | |
+|---|---|
+| **Driver: `neon-serverless`, not `neon-http`** | The HTTP driver *throws* `No transactions support in neon-http driver`. §7.4 needs the review flush transactional, so the HTTP driver would have passed every M1 query and failed at M4 |
+| Better Auth tables | Transcribed from the library's own `getAuthTables()` into a separate `lib/db/auth-schema.ts`, so "do not add columns" is a file boundary rather than a comment. Timestamps are `timestamptz` and defaults are SQL-side `defaultNow()` — the generator's `$defaultFn` form reads the wall clock in application code |
+| `createAuth(db, { clock, baseURL, secret })` | Injectable, so the invite gate is tested against in-process Postgres with a fixed clock instead of only in production |
+| Invite gate | Rejects missing / unknown / used / expired codes with **one identical message**, so the endpoint is not an oracle for guessing valid codes. Consumed atomically (`used_by is null` guard), so a race cannot admit two people on one code |
+| Auth gate placement | `app/(app)/layout.tsx` calls `requireUser()`, so a new page under that group cannot forget it. A test asserts the layout still does, and that every API route uses `requireApiUser` or a cron secret |
+| `scripts/create-invite.ts` | **Added** — not in the plan, but signup is invite-gated and nothing could issue one. Unambiguous alphabet (no O/0, I/1/L), because codes get read aloud |
+| `scripts/reset-password.ts` | Reads the password from stdin, never argv, so it stays out of shell history and `ps`. Uses `auth.$context.password.hash` + `internalAdapter.updatePassword` |
+| GDPR | `lib/gdpr/export.ts` exports its table lists so a test can compare them against the live schema. An export that omits a table downloads fine and is wrong — no end-to-end test of a working program would catch it |
+| Region | `vercel.json` → `regions: ["fra1"]` |
+| `typecheck` | Runs `next typegen` first (see §13) |
 
 ### M2 — Content pipeline · 2 days
 
@@ -887,8 +904,10 @@ test:tz      the *.tz.test.ts suites under UTC, Europe/Berlin, Pacific/Auckland
 test:e2e     playwright test
 test:privacy vitest run tests/privacy
 eval         opt-in AI evaluation suites (hits the real model)
-db:generate  drizzle-kit generate          ← added at M1
-db:migrate   drizzle-kit migrate           ← added at M1
+db:generate  drizzle-kit generate
+db:migrate   drizzle-kit migrate
+invite       tsx scripts/create-invite.ts     issue an invite code
+reset-password  tsx scripts/reset-password.ts reset a password locally
 corpus:build pipeline stages 1–8           ← added at M2
 corpus:load  scripts/load-corpus.ts        ← added at M2
 ```

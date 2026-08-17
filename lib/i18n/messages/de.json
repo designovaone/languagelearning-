@@ -1,0 +1,78 @@
+{
+  "app": {
+    "name": "Sprachtrainer",
+    "tagline": "Wörter, die du kannst, kommen nicht ständig zurück."
+  },
+  "nav": {
+    "dashboard": "Übersicht",
+    "study": "Lernen",
+    "settings": "Einstellungen",
+    "signOut": "Abmelden"
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "signUp": "Registrieren",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "name": "Name",
+    "inviteCode": "Einladungscode",
+    "inviteHint": "Die Registrierung ist nur mit Einladung möglich.",
+    "inviteRejected": "Für die Registrierung wird ein gültiger Einladungscode benötigt.",
+    "signInFailed": "E-Mail und Passwort passen nicht zusammen.",
+    "passwordTooShort": "Mindestens 12 Zeichen verwenden."
+  },
+  "dashboard": {
+    "dueToday": "Heute fällig",
+    "cardsDue": "{count, plural, =0 {Nichts fällig} one {# Karte fällig} other {# Karten fällig}}",
+    "startSession": "Starten",
+    "streak": "{days, plural, =0 {Noch keine Serie} one {# Tag} other {# Tage}}",
+    "sharedStreak": "Alle haben gelernt",
+    "staleWarning": "Der nächtliche Job lief seit {hours} Stunden nicht mehr."
+  },
+  "study": {
+    "showAnswer": "Lösung zeigen",
+    "hint": "Tipp",
+    "correct": "Richtig",
+    "incorrect": "Nicht ganz",
+    "expected": "Erwartet",
+    "typeAnswer": "Antwort eingeben",
+    "progress": "{done} von {total}"
+  },
+  "done": {
+    "title": "Für heute fertig",
+    "body": "Nichts mehr fällig. Morgen wiederzukommen ist genau der Sinn der Sache.",
+    "cardsReviewed": "{count, plural, one {# Karte wiederholt} other {# Karten wiederholt}}",
+    "minutes": "{count, plural, one {# Minute} other {# Minuten}}",
+    "nextDue": "Nächste Karte fällig {when}."
+  },
+  "assessment": {
+    "title": "Wie viele Wörter kennst du?",
+    "intro": "Einige davon sind echte Wörter. Einige sind erfunden. Tippe die an, die du kennst.",
+    "know": "Kenne ich",
+    "dontKnow": "Kenne ich nicht",
+    "estimatedSize": "Du kennst ungefähr {count} Wörter.",
+    "retakeHint": "Das wiederholt sich alle paar Monate und wird so zum Fortschrittsmaß."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "uiLanguage": "Sprache der Oberfläche",
+    "baseLanguage": "Erklärungen auf",
+    "timezone": "Zeitzone",
+    "dailyNewLimit": "Neue Karten pro Tag",
+    "dailyReviewLimit": "Wiederholungen pro Tag",
+    "nudgeHour": "Tägliche Erinnerung um",
+    "exportData": "Meine Daten herunterladen",
+    "deleteAccount": "Mein Konto löschen",
+    "deleteConfirm": "Damit werden Konto und gesamter Lernverlauf endgültig gelöscht."
+  },
+  "install": {
+    "title": "Zum Home-Bildschirm hinzufügen",
+    "iosBody": "Auf Teilen tippen, dann Zum Home-Bildschirm. Mitteilungen funktionieren nur aus der installierten App.",
+    "enableNotifications": "Tägliche Erinnerung einschalten"
+  },
+  "errors": {
+    "generic": "Etwas ist schiefgelaufen.",
+    "offline": "Du bist offline. Deine Antworten werden gespeichert und später übertragen.",
+    "notFound": "Nicht gefunden."
+  }
+}

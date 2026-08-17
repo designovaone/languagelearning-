@@ -14,7 +14,12 @@
     "test:tz": "for tz in UTC Europe/Berlin Pacific/Auckland; do echo \"--- TZ=$tz\"; TZ=$tz vitest run tz.test || exit 1; done",
     "test:privacy": "vitest run tests/privacy",
     "test:e2e": "playwright test",
-    "eval": "vitest run --passWithNoTests tests/eval"
+    "eval": "vitest run --passWithNoTests tests/eval",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "invite": "tsx scripts/create-invite.ts",
+    "reset-password": "tsx scripts/reset-password.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -44,6 +49,7 @@
     "fast-check": "^4.9.0",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10"

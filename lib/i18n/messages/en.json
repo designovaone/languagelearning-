@@ -1,0 +1,78 @@
+{
+  "app": {
+    "name": "Language trainer",
+    "tagline": "Words you know stop coming back."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "study": "Study",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "inviteCode": "Invite code",
+    "inviteHint": "Signup is invite-only.",
+    "inviteRejected": "A valid invite code is required to sign up.",
+    "signInFailed": "That email and password did not match.",
+    "passwordTooShort": "Use at least 12 characters."
+  },
+  "dashboard": {
+    "dueToday": "Due today",
+    "cardsDue": "{count, plural, =0 {Nothing due} one {# card due} other {# cards due}}",
+    "startSession": "Start",
+    "streak": "{days, plural, =0 {No streak yet} one {# day} other {# days}}",
+    "sharedStreak": "Everyone studied",
+    "staleWarning": "The nightly job has not run since {hours} hours ago."
+  },
+  "study": {
+    "showAnswer": "Show answer",
+    "hint": "Hint",
+    "correct": "Correct",
+    "incorrect": "Not quite",
+    "expected": "Expected",
+    "typeAnswer": "Type your answer",
+    "progress": "{done} of {total}"
+  },
+  "done": {
+    "title": "Done for today",
+    "body": "Nothing is due. Coming back tomorrow is the whole point.",
+    "cardsReviewed": "{count, plural, one {# card reviewed} other {# cards reviewed}}",
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "nextDue": "Next card due {when}."
+  },
+  "assessment": {
+    "title": "How many words do you know?",
+    "intro": "Some of these are real words. Some are invented. Tap the ones you know.",
+    "know": "I know this",
+    "dontKnow": "I don't",
+    "estimatedSize": "You know roughly {count} words.",
+    "retakeHint": "This repeats every few months, so it becomes a progress measure."
+  },
+  "settings": {
+    "title": "Settings",
+    "uiLanguage": "Interface language",
+    "baseLanguage": "Explanations in",
+    "timezone": "Time zone",
+    "dailyNewLimit": "New cards per day",
+    "dailyReviewLimit": "Reviews per day",
+    "nudgeHour": "Daily reminder at",
+    "exportData": "Download my data",
+    "deleteAccount": "Delete my account",
+    "deleteConfirm": "This permanently deletes your account and all review history."
+  },
+  "install": {
+    "title": "Add to home screen",
+    "iosBody": "Tap Share, then Add to Home Screen. Notifications only work from the installed app.",
+    "enableNotifications": "Turn on the daily reminder"
+  },
+  "errors": {
+    "generic": "Something went wrong.",
+    "offline": "You are offline. Your answers are saved and will sync.",
+    "notFound": "Not found."
+  }
+}
