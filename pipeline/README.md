@@ -28,7 +28,7 @@ Rows carry a short `source_id`; `sources.json` holds the full citation and licen
 | 1b | Frequency blend — tie-breaker within a band, not the source of the deck | |
 | 2 | Lemmatise (spaCy) — needed for the frequency blend, not for the curated lists | |
 | 3 | Filter — proper nouns, numerals, fragments, profanity | |
-| 4 | **Translate** (kaikki.org / wiktextract). Italian→English 98.6% coverage | ✅ IT |
+| 4 | **Translate** (kaikki.org / wiktextract). IT→EN 98.6%, EN→DE 90.4% | ✅ |
 | 5 | Pick primary sense — one-time AI pass | |
 | 6 | Topic-cluster — one-time AI pass | |
 | 7 | Sentences (Tatoeba) | |
@@ -56,3 +56,21 @@ The stage refuses to write its artifact if those counts drift outside a sanity r
 too many styled headwords fail to match an entry. That guard is what caught the PDF's
 soft-hyphen line breaks — 158 fragments like `acceca-` + `mento` that would otherwise have
 been silently dropped from the FO band.
+
+
+## Stage 4 ranks translations by repetition
+
+Wiktionary gives a word many translations across many senses, in no useful order. Taken as
+they come, `dog` yields *Rüde, Schabracke, Hund* — a male dog, an insult, and only then the
+word anyone wants.
+
+Tags cannot fix this. The dialect forms `Wossa` and `wassa` for *water* carry no regional tag
+at all — just `neuter`, or nothing.
+
+What works is **repetition**: a form that translates several senses of the entry is the
+standard one, while a regional or narrow variant appears once. `Wasser` occurs six times
+against one each for `Wossa` and `wassa`; `Hund` four times against one for `Schabracke`. So
+translations are ranked by recurrence, then by earliest sense, then single word before phrase.
+
+That is a ranking, not a decision — picking the one primary sense is stage 5's job. It just
+gets a far better shortlist to choose from.

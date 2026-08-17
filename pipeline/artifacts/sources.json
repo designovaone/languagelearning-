@@ -23,6 +23,14 @@
     "note": "Levels C1-C2, distributed alongside CEFR-J.",
     "url": "https://github.com/openlanguageprofiles/olp-en-cefrj"
   },
+  "wiktextract-en": {
+    "attribution": "Wiktionary contributors; extraction by Tatu Ylonen (kaikki.org)",
+    "commercial": "yes, with attribution and share-alike",
+    "license": "CC BY-SA 4.0 and GFDL",
+    "name": "Wiktionary (English edition) English entries, via kaikki.org / wiktextract",
+    "note": "German translations for English lemmas - the en-from-de direction.",
+    "url": "https://kaikki.org/dictionary/English/"
+  },
   "wiktextract-it": {
     "attribution": "Wiktionary contributors; extraction by Tatu Ylonen (kaikki.org)",
     "commercial": "yes, with attribution and share-alike",

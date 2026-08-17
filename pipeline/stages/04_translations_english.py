@@ -72,10 +72,40 @@ def load_spine(path: Path) -> dict[str, list[dict]]:
 
 
 def german_translations(entry: dict) -> tuple[list[str], str | None]:
-    words: list[str] = []
-    genders: set[str] = set()
+    """
+    German translations for one entry, best first.
 
-    for item in entry.get("translations") or []:
+    wiktextract puts a word's translation table at the top level for some
+    entries and under individual senses for others -- "dictionary" has one at
+    the top, "dog" does not. Reading only the top level silently lost the
+    majority of common words, which is what the coverage guard caught.
+
+    **Ranking is the harder half.** Taken in document order, `dog` yields
+    "Ruede, Schabracke, Hund" -- a male dog, an insult, and only then the
+    actual word. Tags cannot fix this: the dialect forms "Wossa" and "wassa"
+    for *water* carry no regional tag at all, just `neuter` or nothing.
+
+    The signal that works is **repetition**. A word that translates several
+    senses of the entry is the standard one; a regional or narrow variant
+    appears once. "Wasser" occurs six times against one each for "Wossa" and
+    "wassa"; "Hund" four times against one for "Schabracke". So rank by how
+    often a form recurs, then by the earliest sense it belongs to, then prefer
+    a single word over a phrase.
+
+    This is a ranking, not a decision. Choosing the one primary sense is stage
+    5's job (PLAN.md SS5), and it gets a much better shortlist this way.
+    """
+    counts: Counter = Counter()
+    first_seen: dict[str, int] = {}
+    gender_of: dict[str, set[str]] = {}
+
+    items: list[tuple[int, dict]] = [
+        (0, item) for item in (entry.get("translations") or [])
+    ]
+    for index, sense in enumerate(entry.get("senses") or [], start=1):
+        items.extend((index, item) for item in (sense.get("translations") or []))
+
+    for order, item in items:
         if item.get("code") != "de":
             continue
         tags = set(item.get("tags") or [])
@@ -86,16 +116,21 @@ def german_translations(entry: dict) -> tuple[list[str], str | None]:
             continue
         for tag, short in GENDER_TAGS.items():
             if tag in tags:
-                genders.add(short)
-        if word not in words:
-            words.append(word)
+                gender_of.setdefault(word, set()).add(short)
+        counts[word] += 1
+        first_seen.setdefault(word, order)
 
-    # A single word is a better first answer than a phrase. Capture the
-    # original position first: sorting with a key that calls .index() on the
-    # list being sorted reads a half-mutated list.
-    words = [w for _, w in sorted(enumerate(words), key=lambda p: (" " in p[1], p[0]))]
-    gender = None if len(genders) != 1 else next(iter(genders))
-    return words[:MAX_TRANSLATIONS], gender
+    ranked = sorted(
+        counts,
+        key=lambda w: (-counts[w], first_seen[w], " " in w, w),
+    )
+    # The gender that matters is the one belonging to the word actually shown.
+    # Requiring every translation to agree meant "dog" -> Hund (m) plus
+    # Schabracke (f) recorded no gender at all, and a German noun without its
+    # article is only half learned.
+    top_genders = gender_of.get(ranked[0], set()) if ranked else set()
+    gender = next(iter(top_genders)) if len(top_genders) == 1 else None
+    return ranked[:MAX_TRANSLATIONS], gender
 
 
 def main() -> int:
@@ -143,8 +178,6 @@ def main() -> int:
                 continue
             word = (entry.get("word") or "").strip().lower()
             if word not in spine:
-                continue
-            if not entry.get("translations"):
                 continue
 
             if cache_out is not None:
