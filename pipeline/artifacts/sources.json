@@ -22,5 +22,13 @@
     "name": "Octanove Vocabulary Profile C1/C2 v1.0",
     "note": "Levels C1-C2, distributed alongside CEFR-J.",
     "url": "https://github.com/openlanguageprofiles/olp-en-cefrj"
+  },
+  "wiktextract-it": {
+    "attribution": "Wiktionary contributors; extraction by Tatu Ylonen (kaikki.org)",
+    "commercial": "yes, with attribution and share-alike",
+    "license": "CC BY-SA 4.0 and GFDL",
+    "name": "Wiktionary (English edition) Italian entries, via kaikki.org / wiktextract",
+    "note": "English glosses for Italian lemmas - the it-from-en direction.",
+    "url": "https://kaikki.org/dictionary/Italian/"
   }
 }

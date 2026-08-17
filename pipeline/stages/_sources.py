@@ -33,6 +33,22 @@ SOURCES: dict[str, dict[str, str]] = {
         "commercial": "yes, with citation",
         "note": "Levels C1-C2, distributed alongside CEFR-J.",
     },
+    "wiktextract-it": {
+        "name": "Wiktionary (English edition) Italian entries, via kaikki.org / wiktextract",
+        "attribution": "Wiktionary contributors; extraction by Tatu Ylonen (kaikki.org)",
+        "url": "https://kaikki.org/dictionary/Italian/",
+        "license": "CC BY-SA 4.0 and GFDL",
+        "commercial": "yes, with attribution and share-alike",
+        "note": "English glosses for Italian lemmas - the it-from-en direction.",
+    },
+    "wiktextract-en": {
+        "name": "Wiktionary (English edition) English entries, via kaikki.org / wiktextract",
+        "attribution": "Wiktionary contributors; extraction by Tatu Ylonen (kaikki.org)",
+        "url": "https://kaikki.org/dictionary/English/",
+        "license": "CC BY-SA 4.0 and GFDL",
+        "commercial": "yes, with attribution and share-alike",
+        "note": "German translations for English lemmas - the en-from-de direction.",
+    },
     "nvdb": {
         "name": "Nuovo vocabolario di base della lingua italiana (2016)",
         "attribution": "Tullio De Mauro and Isabella Chiari, with Francesca Ferrucci; machine-readable extraction by Alberto Pettarin",

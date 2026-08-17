@@ -28,7 +28,7 @@ Rows carry a short `source_id`; `sources.json` holds the full citation and licen
 | 1b | Frequency blend — tie-breaker within a band, not the source of the deck | |
 | 2 | Lemmatise (spaCy) — needed for the frequency blend, not for the curated lists | |
 | 3 | Filter — proper nouns, numerals, fragments, profanity | |
-| 4 | Translate (kaikki.org / wiktextract) | |
+| 4 | **Translate** (kaikki.org / wiktextract). Italian→English 98.6% coverage | ✅ IT |
 | 5 | Pick primary sense — one-time AI pass | |
 | 6 | Topic-cluster — one-time AI pass | |
 | 7 | Sentences (Tatoeba) | |
