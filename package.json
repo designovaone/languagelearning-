@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --passWithNoTests tests/unit tests/db tests/api",
     "test:watch": "vitest tests/unit tests/db tests/api",
     "test:coverage": "vitest run --coverage --passWithNoTests tests/unit tests/db tests/api",

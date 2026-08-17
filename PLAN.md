@@ -881,7 +881,7 @@ dev          next dev
 build        next build
 start        next start
 lint         eslint
-typecheck    tsc --noEmit
+typecheck    next typegen && tsc --noEmit
 test         vitest run tests/unit tests/db tests/api
 test:tz      the *.tz.test.ts suites under UTC, Europe/Berlin, Pacific/Auckland
 test:e2e     playwright test
@@ -895,6 +895,11 @@ corpus:load  scripts/load-corpus.ts        ← added at M2
 
 **A script is added in the milestone that gives it something to point at**, never earlier. An
 existing script that runs and does nothing gets trusted; a missing one gets written.
+
+**`typecheck` generates route types first.** `LayoutProps`, `PageProps` and `RouteContext` are
+global helpers Next writes into `.next/types` during `next dev`, `next build` or `next typegen`.
+A bare `tsc --noEmit` passes on any machine that has run `next dev` recently and fails on a fresh
+clone — so the script must not depend on a leftover build directory.
 
 ### Environment
 
