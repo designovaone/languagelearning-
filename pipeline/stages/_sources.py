@@ -65,6 +65,22 @@ SOURCES: dict[str, dict[str, str]] = {
         "commercial": "yes, with attribution and share-alike",
         "note": "Written/encyclopedic-register frequency. The other half of the stage 1b blend.",
     },
+    "english-words": {
+        "name": "dwyl/english-words (words_alpha.txt)",
+        "attribution": "dwyl contributors",
+        "url": "https://github.com/dwyl/english-words",
+        "license": "Unlicense (public domain)",
+        "commercial": "yes",
+        "note": "Filter only. Used to keep real words OUT of the M3 pseudoword pool; nothing from it is distributed.",
+    },
+    "paroleitaliane": {
+        "name": "paroleitaliane (280.000 parole italiane)",
+        "attribution": "Francesco Napoletano",
+        "url": "https://github.com/napolux/paroleitaliane",
+        "license": "MIT",
+        "commercial": "yes",
+        "note": "Filter only. Used to keep real words OUT of the M3 pseudoword pool; nothing from it is distributed.",
+    },
     "nvdb": {
         "name": "Nuovo vocabolario di base della lingua italiana (2016)",
         "attribution": "Tullio De Mauro and Isabella Chiari, with Francesca Ferrucci; machine-readable extraction by Alberto Pettarin",

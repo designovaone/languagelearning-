@@ -35,6 +35,7 @@ Rows carry a short `source_id`; `sources.json` holds the full citation and licen
 | 7 | Sentences (Tatoeba) | |
 | 8 | Audio (Kokoro-82M, local) | |
 | 9 | **Load into the database** — `npm run corpus:load`, idempotent | ✅ |
+| 20 | **Pseudowords** — assessment traps, not deck content (M3) | ✅ |
 
 ## The Italian bands are recovered from the PDF
 
@@ -130,3 +131,34 @@ a right one.
 
 `{lang}-05-primary.jsonl` is output and cache in one, checked in, resumable. `--dry-run` never
 writes — an artifact full of fallbacks looks finished and is not.
+
+
+## Stage 20 generates the assessment's pseudowords
+
+Numbered outside the 1–9 content sequence because nothing it produces reaches a flashcard. It is
+here because it has the pipeline's shape: offline, deterministic, seeded, writes a checked-in
+artifact, never runs in production.
+
+A character trigram model (the Wuggy approach) over the most frequent real words, sampled until it
+emits its own end marker. **Length is not steered** — an earlier version drew a target length and
+suppressed the end marker until it was reached, which pushed the Italian mean from 7.7 characters
+to 10.0. Instead, finished words fill length buckets in the proportions real words have, so the
+phonotactics stay exactly as the model produced them and the traps cannot be spotted by shape.
+
+**The one thing that must not happen is a real word in the pool.** A learner who says "I know this"
+about a real word we are scoring as a trap is penalised for being right, and the false-alarm
+correction silently inverts. Candidates are checked against ~1.8M Italian and ~3.8M English real
+forms: both frequency corpora in full, the curated lists, and a dictionary word list **for every
+language the learner knows** — an English word is no trap for someone studying Italian from
+English.
+
+### A filter cannot audit itself
+
+The corpora alone passed `accurse`, `flanch` and `revender` into the English pool, and `unco`,
+`pume` and `imino` into the Italian one. All are real; none appear in film subtitles or Wikipedia.
+**Corpus absence is not evidence that a word does not exist**, and a filter always reports clean on
+exactly the words it does not know.
+
+So the stage ends with an independent check against `/usr/share/dict/words`, which is never part of
+the filter. That is what caught all six. It is skipped with a note where the file is absent, and
+the reproducible filter is unchanged by its presence.

@@ -43,4 +43,8 @@ WWF="https://raw.githubusercontent.com/adno/wikipedia-word-frequency-clean/main/
 fetch "$WWF/itwiki-frequency-20221020-nfkc-lower.tsv.xz" itwiki-frequency.tsv.xz
 fetch "$WWF/enwiki-frequency-20221020-nfkc-lower.tsv.xz" enwiki-frequency.tsv.xz
 
+echo "Word lists — used only to keep real words OUT of the pseudoword pool (M3)"
+fetch "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt" en-wordlist.txt
+fetch "https://raw.githubusercontent.com/napolux/paroleitaliane/master/paroleitaliane/280000_parole_italiane.txt" it-wordlist.txt
+
 echo "done. Sources in pipeline/raw/ (gitignored)."

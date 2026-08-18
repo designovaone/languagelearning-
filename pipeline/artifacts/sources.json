@@ -7,6 +7,14 @@
     "note": "Levels A1-B2.",
     "url": "https://github.com/openlanguageprofiles/olp-en-cefrj"
   },
+  "english-words": {
+    "attribution": "dwyl contributors",
+    "commercial": "yes",
+    "license": "Unlicense (public domain)",
+    "name": "dwyl/english-words (words_alpha.txt)",
+    "note": "Filter only. Used to keep real words OUT of the M3 pseudoword pool; nothing from it is distributed.",
+    "url": "https://github.com/dwyl/english-words"
+  },
   "frequencywords": {
     "attribution": "Hermit Dave, from the OPUS OpenSubtitles2018 corpus",
     "commercial": "yes, with attribution and share-alike",
@@ -30,6 +38,14 @@
     "name": "Octanove Vocabulary Profile C1/C2 v1.0",
     "note": "Levels C1-C2, distributed alongside CEFR-J.",
     "url": "https://github.com/openlanguageprofiles/olp-en-cefrj"
+  },
+  "paroleitaliane": {
+    "attribution": "Francesco Napoletano",
+    "commercial": "yes",
+    "license": "MIT",
+    "name": "paroleitaliane (280.000 parole italiane)",
+    "note": "Filter only. Used to keep real words OUT of the M3 pseudoword pool; nothing from it is distributed.",
+    "url": "https://github.com/napolux/paroleitaliane"
   },
   "wikiwordfreq": {
     "attribution": "Adam Nohejl; underlying text by Wikipedia contributors",
