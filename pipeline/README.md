@@ -30,7 +30,7 @@ Rows carry a short `source_id`; `sources.json` holds the full citation and licen
 | 2 | Lemmatise (spaCy) — needed for the frequency blend, not for the curated lists | |
 | 3 | Filter — proper nouns, numerals, fragments, profanity | |
 | 4 | **Translate** (kaikki.org / wiktextract). IT→EN 98.6%, EN→DE 90.4% | ✅ |
-| 5 | Pick primary sense — one-time AI pass | |
+| 5 | Pick primary sense — one-time AI pass | **written, not yet run** |
 | 6 | Topic-cluster — one-time AI pass | |
 | 7 | Sentences (Tatoeba) | |
 | 8 | Audio (Kokoro-82M, local) | |
@@ -97,3 +97,31 @@ Two rules settled by looking at the data rather than by picking a constant:
 The stage refuses to write if coverage falls under 95%, if under 90% of ranks used both corpora, or
 if a canary word (`essere`, `casa`, `ciao`, `the`, `water`, …) falls outside the top 5,000. A wrong
 ranking still looks exactly like a ranking, so it needs a check that knows what the answer is.
+
+
+## Stage 5 cleans before it chooses
+
+Stage 4's shortlist is two different problems in the two courses. English→German options are clean
+words; Italian→English options are often *definitions* — `crescere` → "to grow, to increase, to
+expand", `atmosfera` → "atmosphere (all meanings), air". 56.3% of Italian first-translations are a
+gloss rather than a word, against 0.2% of the English ones.
+
+So `simplify()` runs first, deterministically and for free: drop parentheticals, keep the first
+comma- or semicolon-separated equivalent. The model is only asked where a genuine choice survives.
+
+```bash
+cd pipeline/stages
+python3 test_05_primary_sense.py                       # the pure logic, stdlib only
+python3 05_primary_sense.py --dry-run --sample 20      # free, writes nothing
+export OPENROUTER_API_KEY=...
+python3 05_primary_sense.py --lang it --limit 50 --sample 50   # eyeball first
+python3 05_primary_sense.py                            # the full pass
+```
+
+**The model may choose; it may not invent.** Every answer is matched back against the candidates it
+was offered. Anything else is discarded and counted, and the stage refuses to write above a 10%
+fallback rate. Canary words (`casa`→house, `dog`→Hund, …) must come back right, because a wrong
+translation looks exactly like a right one.
+
+`{lang}-05-primary.jsonl` is output and cache in one, checked in, resumable. `--dry-run` never
+writes — an artifact full of fallbacks looks finished and is not.

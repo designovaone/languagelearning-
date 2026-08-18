@@ -58,6 +58,8 @@ export type WordRow = {
   gender?: string | null;
   pos?: string[] | string | null;
   freqRank?: number | null;
+  /** Stage 5's chosen sense. Absent until that pass has run. */
+  primarySense?: string | null;
   sourceId?: string;
 };
 
@@ -126,6 +128,29 @@ export function freqIndex(rows: FreqRow[]): Map<string, number> {
   const index = new Map<string, number>();
   for (const row of rows) {
     index.set(row.lemma.toLowerCase(), row.freq_rank);
+  }
+  return index;
+}
+
+/** A row of a `*-05-primary.jsonl` artifact (PLAN.md §5, stage 5). */
+export type PrimaryRow = {
+  lemma: string;
+  primary_sense: string;
+};
+
+/**
+ * Lemma → chosen primary sense.
+ *
+ * Stage 5 is a paid pass, so its artifact is optional: without it the loader
+ * falls back to translation position 1, which is stage 4's ranking and is
+ * usually right. The deck works either way; it is just less precise.
+ */
+export function primaryIndex(rows: PrimaryRow[]): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const row of rows) {
+    if (row.primary_sense?.trim()) {
+      index.set(row.lemma.toLowerCase(), row.primary_sense.trim());
+    }
   }
   return index;
 }
@@ -257,7 +282,9 @@ export async function loadCourse(
       pos: pos ?? null,
       gender: row.gender ?? null,
       translations,
-      primarySense: translations[0],
+      // Stage 5's decision when it exists, else stage 4's top-ranked
+      // translation. Never null: the card needs an answer to show.
+      primarySense: row.primarySense?.trim() || translations[0],
       ...attribution,
     });
   }

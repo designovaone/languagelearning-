@@ -4,6 +4,7 @@ import {
   COURSES,
   freqIndex,
   orderForLoad,
+  primaryIndex,
   type FreqRow,
   type WordRow,
 } from "@/lib/corpus/load";
@@ -123,5 +124,33 @@ describe("orderForLoad", () => {
     );
     expect(out.map((r) => r.lemma)).toEqual(["acqua", "che"]);
     expect(out.every((r) => r.freqRank === null)).toBe(true);
+  });
+});
+
+/**
+ * Stage 5 is a paid pass, so its artifact is optional and the loader must work
+ * without it. The failure worth guarding is the quiet one again: if the lookup
+ * misses, every card silently falls back to stage 4's shortlist and the deck
+ * looks fine.
+ */
+describe("primaryIndex", () => {
+  it("maps lemma to the chosen sense", () => {
+    expect(primaryIndex([{ lemma: "casa", primary_sense: "house" }]).get("casa")).toBe(
+      "house",
+    );
+  });
+
+  it("matches case-insensitively and trims", () => {
+    const index = primaryIndex([{ lemma: "Roma", primary_sense: "  Rome  " }]);
+    expect(index.get("roma")).toBe("Rome");
+  });
+
+  it("ignores an empty sense rather than putting a blank on a card", () => {
+    const index = primaryIndex([
+      { lemma: "casa", primary_sense: "   " },
+      { lemma: "acqua", primary_sense: "water" },
+    ]);
+    expect(index.has("casa")).toBe(false);
+    expect(index.get("acqua")).toBe("water");
   });
 });

@@ -16,7 +16,9 @@ import {
   freqIndex,
   loadCourse,
   orderForLoad,
+  primaryIndex,
   type FreqRow,
+  type PrimaryRow,
   type SourceManifest,
   type WordRow,
 } from "@/lib/corpus/load";
@@ -34,6 +36,12 @@ const ARTIFACT_FOR: Record<string, string> = {
 const FREQ_FOR: Record<string, string> = {
   "it-from-en": "it-01b-freq.jsonl",
   "en-from-de": "en-01b-freq.jsonl",
+};
+
+/** Stage 5 output: the chosen primary sense. Optional — it is a paid pass. */
+const PRIMARY_FOR: Record<string, string> = {
+  "it-from-en": "it-05-primary.jsonl",
+  "en-from-de": "en-05-primary.jsonl",
 };
 
 function readJsonl<T>(path: string): T[] {
@@ -98,7 +106,20 @@ async function main(): Promise<number> {
       return 2;
     }
 
-    const ordered = orderForLoad(rows, spec, ranks);
+    // Optional, unlike the frequency artifact: stage 5 costs money and may
+    // legitimately not have run yet. Missing it is reported, not fatal.
+    const primaryPath = join(ARTIFACTS, PRIMARY_FOR[slug]);
+    let senses = new Map<string, string>();
+    try {
+      senses = primaryIndex(readJsonl<PrimaryRow>(primaryPath));
+    } catch {
+      console.error(`  no ${PRIMARY_FOR[slug]} — using stage 4's top translation`);
+    }
+
+    const ordered = orderForLoad(rows, spec, ranks).map((row) => ({
+      ...row,
+      primarySense: senses.get(row.lemma.toLowerCase()) ?? null,
+    }));
     const unranked = ordered.filter((r) => r.freqRank == null).length;
     const slice = limit ? ordered.slice(0, limit) : ordered;
     const report = await loadCourse(getDb(), spec, slice, manifest);
@@ -108,7 +129,8 @@ async function main(): Promise<number> {
         (report.skippedNoTranslation
           ? ` (${report.skippedNoTranslation} skipped, no translation)`
           : "") +
-        (unranked ? ` (${unranked} with no frequency rank, sorted last)` : ""),
+        (unranked ? ` (${unranked} with no frequency rank, sorted last)` : "") +
+        (senses.size ? ` (${senses.size} primary senses from stage 5)` : ""),
     );
   }
 

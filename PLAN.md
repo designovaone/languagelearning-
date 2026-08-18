@@ -366,7 +366,7 @@ Each stage writes a checked-in intermediate artifact, so a re-run never repeats 
 | 2 | **Lemmatise** | spaCy. Collapse *sono / è / siamo* into one `essere` with inflections attached. **This is the genuinely fiddly step** — expect a day on Italian clitics and German separable verbs |
 | 3 | **Filter** | Drop proper nouns, numerals, fragments, and a profanity blocklist. Much lighter than before: a curated list arrives clean |
 | 4 | **Translate** | kaikki.org → senses, part of speech, gender |
-| 5 | **Pick primary sense** | One-time AI pass over ~5,000 items, ~€1–3. Wiktionary entries often carry ten senses; one must be chosen |
+| 5 | **Pick primary sense** | One-time AI pass, ~€1–3. Two jobs, not one — see below. Wiktionary carries many senses, *and* for Italian it carries definitions rather than translations |
 | 6 | **Topic-cluster** | One-time AI pass grouping each band into coherent sets ("food", "travel"). Now a refinement rather than a rescue — the curated band already provides pedagogical order |
 | 7 | **Sentences** | Tatoeba, 2–3 per word, filtered to sentences whose other words are already in-band. This is also the sentence-level material §8 needs |
 | 8 | **Audio** | Kokoro-82M locally, for every word and every sentence. **Listen to a 20-word sample first** |
@@ -411,6 +411,36 @@ head — Italian opens `e, di, il, la, che`. This is the failure this section wa
 it survives inside a band because band FO *contains* function words. It is not fixed here because
 the assessment (§6) seeds them as known before the drill ever runs (M3 precedes M4). Revisit with
 real data if it turns out to matter.
+
+### Stage 5 has two jobs, not one — amended at build time
+
+This section described stage 5 as choosing among senses. Measured on the stage 4 artifacts, that
+is only half the work, and the two courses need different halves:
+
+| | needs a choice (>1 option) | needs a cleanup (first is a gloss) |
+|---|---|---|
+| Italian → English | 68.8% | **56.3%** |
+| English → German | 79.4% | 0.2% |
+
+The English Wiktionary's *German translations* are clean words (`Betrug`, `Täuschung`). Its
+*English glosses of Italian words* are definitions: `crescere` → "to grow, to increase, to expand",
+`atmosfera` → "atmosphere (all meanings), air". Choosing among definitions still leaves a
+definition on the card.
+
+So the stage does the cheap job first, deterministically and for free: strip parentheticals, take
+the first comma- or semicolon-separated equivalent. That alone turns "atmosphere (all meanings),
+air" into "atmosphere". Only where a real choice survives does the model see the row — which
+shortens the prompt, cuts the cost, and means a missing API key still improves the deck.
+
+**The model may choose; it may not invent.** Every answer is matched back against the candidate
+list it was offered, case- and space-insensitively. Anything else is discarded, the row falls back
+to candidate 1, and the fallback rate is reported — the stage refuses to write above 10%. A
+translation engine that quietly substitutes a plausible word is the worst failure available here,
+because its output is indistinguishable from success.
+
+`{lang}-05-primary.jsonl` is both output and cache, checked in, and records the `options` each row
+was decided from, so an upstream stage 4 change re-opens only the affected rows. `--dry-run` never
+writes: an artifact full of fallbacks looks finished and is not.
 
 ### Audio: generated locally, from an open-weights model
 
