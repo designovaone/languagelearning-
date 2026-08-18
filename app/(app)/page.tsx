@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 
 import { requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
@@ -36,10 +36,16 @@ export default async function DashboardPage() {
   // Whether they have ever been assessed decides what this page offers. An
   // unassessed learner sent straight to the drill would meet 7,000 cards all
   // marked new, including every word they already know.
+  // `estimatedSize is not null` is what makes it a FINISHED sitting. A row is
+  // written when the learner starts, so counting rows would treat someone who
+  // opened the page and closed it as assessed — and then offer them a drill
+  // over a deck that was never seeded.
   const [sitting] = await db
     .select({ id: assessments.id, size: assessments.estimatedSize })
     .from(assessments)
-    .where(eq(assessments.userId, user.id))
+    .where(
+      and(eq(assessments.userId, user.id), isNotNull(assessments.estimatedSize)),
+    )
     .orderBy(desc(assessments.takenAt))
     .limit(1);
 

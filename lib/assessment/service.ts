@@ -61,8 +61,18 @@ export type AssessmentResult = {
 /** ~2 standard deviations, measured against simulated learners. */
 export const REPORTED_MARGIN = 550;
 
-/** The learner's course, or null if they are not enrolled in one. */
-async function courseFor(db: AnyDb, userId: string) {
+/**
+ * The learner's course, or null if they are not enrolled in one.
+ *
+ * Exported because the route needs the course *slug* to choose a pseudoword
+ * pool before it can start a sitting. The first version called
+ * `startAssessment` with an empty pool just to read the slug, then called it
+ * again for real — which wrote a second `assessments` row on every single
+ * start. Those orphans then counted as sittings: the dashboard decides what to
+ * offer by asking whether an assessment exists, so merely opening the page and
+ * walking away would have hidden the assessment link for good.
+ */
+export async function courseFor(db: AnyDb, userId: string) {
   const rows = await db
     .select({ id: courses.id, slug: courses.slug })
     .from(enrollments)

@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
-import { startAssessment, submitAssessment } from "@/lib/assessment/service";
+import { courseFor, startAssessment, submitAssessment } from "@/lib/assessment/service";
 import { requireApiUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { systemClock } from "@/lib/time/clock";
@@ -92,15 +92,15 @@ export async function POST(request: Request) {
   }
 
   // --- start a sitting ------------------------------------------------------
-  // The pool is needed before the course is known, so start twice: once to
-  // learn the course, then with its pool. Cheap — the first call is a single
-  // indexed row read.
+  // Look the course up directly. Starting a throwaway sitting to read its slug
+  // would write an orphan `assessments` row on every start, and an orphan
+  // counts as a sitting everywhere that asks "has this learner been assessed".
   const db = getDb();
-  const probe = await startAssessment(db, user.id, [], systemClock.now());
-  if (!probe) {
+  const course = await courseFor(db, user.id);
+  if (!course) {
     return Response.json({ error: "no-course" }, { status: 409, headers: NO_STORE });
   }
-  const pool = pseudowordsFor(probe.courseSlug);
+  const pool = pseudowordsFor(course.slug);
   if (pool.length === 0) {
     return Response.json({ error: "no-pseudowords" }, { status: 500, headers: NO_STORE });
   }

@@ -45,7 +45,7 @@ into `PLAN.md`. Nothing gets deleted just because it stopped being annoying.
 | | |
 |---|---|
 | **`BETTER_AUTH_URL` is `http://localhost:3000`** | Correct locally, wrong the moment this deploys. **The PWA install, the service worker scope and every push subscription bind permanently to the origin they were created on** (PLAN §13). Change it as part of the first deploy, not after |
-| **`drizzle-kit` does not read `.env.local`** | Run migrations as `node --env-file=.env.local node_modules/drizzle-kit/bin.cjs migrate`. A bare `npm run db:migrate` finds no URL and stops |
+| ~~`drizzle-kit` does not read `.env.local`~~ | **Fixed.** Every database script now runs through `node --env-file-if-exists=.env.local`, so `npm run db:migrate`, `invite`, `reset-password`, `reset-learner` and `corpus:load` all work directly. `--env-file-if-exists` rather than `--env-file` so CI, where the values come from the environment itself, does not fail on a missing file |
 | **`.env.local` values need quoting** | The Neon URL contains `&`, which breaks `set -a; . ./.env.local`. `DATABASE_URL` is quoted for that reason |
 | **Migrations run against the pooled endpoint** | It works today. If a future migration needs a session-level lock, the direct (non-pooler) endpoint may be required |
 | **Nudge delivery is checked by hand, by design** | Accepted 2026-08-18. With two learners a missed reminder is noticed the same day. The `cron_runs` staleness warning and heartbeat still ship at M7 — those catch a *silent* stop. Delivery receipts, retries and per-device failure tracking are deferred. **Revisit before a third learner**, whose missed reminders nobody else would see |

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
+  courseFor,
   startAssessment,
   submitAssessment,
 } from "@/lib/assessment/service";
@@ -168,6 +169,41 @@ describe("assessment service", () => {
       updatedAt: NOW,
     });
     expect(await startAssessment(db, "u_lonely", PSEUDO, NOW, 1)).toBeNull();
+  });
+
+  it("writes exactly ONE assessment row per start", async () => {
+    // The route used to call startAssessment twice - once with an empty pool
+    // just to read the course slug - leaving an orphan row on every start. An
+    // orphan counts as a sitting anywhere that asks "has this learner been
+    // assessed", so opening the page and walking away hid the assessment link.
+    await startAssessment(db, USER, PSEUDO, NOW, 1);
+    expect(
+      await db
+        .select()
+        .from(schema.assessments)
+        .where(eq(schema.assessments.userId, USER)),
+    ).toHaveLength(1);
+  });
+
+  it("leaves a started-but-unfinished sitting with no estimate", async () => {
+    // What makes a sitting *finished* is `estimatedSize`, not the row existing.
+    await startAssessment(db, USER, PSEUDO, NOW, 1);
+    const [row] = await db
+      .select()
+      .from(schema.assessments)
+      .where(eq(schema.assessments.userId, USER));
+    expect(row.estimatedSize).toBeNull();
+  });
+
+  it("finds the course without creating anything", async () => {
+    const course = await courseFor(db, USER);
+    expect(course?.id).toBe(courseId);
+    expect(
+      await db
+        .select()
+        .from(schema.assessments)
+        .where(eq(schema.assessments.userId, USER)),
+    ).toHaveLength(0);
   });
 
   it("is reproducible: the same seed produces the same prompts", async () => {
