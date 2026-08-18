@@ -1,25 +1,34 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/session";
+import { getDb } from "@/lib/db";
+import { needsAssessment } from "@/lib/study/session";
+
+import { StudyRunner } from "./study-runner";
 
 /**
- * The drill lands at M4. What matters at M1 is that this route is behind the
- * session gate: a logged-out visitor is sent to sign-in, never shown a shell.
+ * The drill (PLAN.md §7).
+ *
+ * The page is a shell: it proves the session gate and renders the runner,
+ * which fetches one prefetch and then works entirely on the device. Server-
+ * rendering the first card would save one round trip and cost the property
+ * the whole design rests on — that card-to-card transitions touch no network.
+ *
+ * **An unassessed learner is sent to the assessment instead.** Without a
+ * sitting the deck is ordered by raw frequency, and the drill opens on `e`,
+ * `di`, `il`, `la` — function words whose cards teach nothing and whose
+ * translations are the worst in the deck. See `needsAssessment`.
  */
 export default async function StudyPage() {
-  await requireUser("/study");
+  const user = await requireUser("/study");
+  if (await needsAssessment(getDb(), user.id)) redirect("/assessment");
   const t = await getTranslations();
 
   return (
-    <main className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        {t("done.title")}
-      </h1>
-      <p className="text-neutral-600 dark:text-neutral-400">{t("done.body")}</p>
-      <Link href="/" className="text-sm underline">
-        {t("nav.dashboard")}
-      </Link>
+    <main className="flex flex-col gap-6">
+      <h1 className="sr-only">{t("nav.study")}</h1>
+      <StudyRunner />
     </main>
   );
 }

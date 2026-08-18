@@ -1,7 +1,7 @@
 # How to test it
 
-What works today, how to run it, and what you should expect to be missing. Written after M2
-stage 9 — there is real content in the database, but no drill yet.
+What works today, how to run it, and what you should expect to be missing. Written after M4 —
+there is real content, a working assessment, and **the drill now runs**.
 
 ---
 
@@ -61,6 +61,44 @@ For the German course you should get 7,821 words across A1–C2.
 
 If you see `0`, the enrollment did not happen — that is a bug, tell me.
 
+## 5. Take the assessment, then study
+
+The drill will not start without a finished assessment — `/study` sends you to `/assessment`
+instead. That is deliberate: without a sitting the deck is ordered by raw frequency, and the first
+five cards are `e`, `di`, `il`, `la`, `che`. Two of those translate as "the" and one comes out as
+"used to indicate possession". The assessment seeds every one of them as known, and the first real
+card becomes something like `regola` → *rule*.
+
+**The assessment** is about sixty taps: real words mixed with invented ones, "I know this" or "I
+don't". Three to five minutes. Some of the words are fake, and claiming them is what makes the
+number trustworthy — answer honestly rather than generously.
+
+**Then `/study`.** You see an Italian word; type what it means in English and press **Check**.
+
+| | |
+|---|---|
+| **Check** | grades your answer and moves on |
+| **Hint** | first letter of each word. Costs you — a hinted card is graded `Hard` |
+| **Show answer** | gives up. Counts as wrong, and the card comes back later in the same session |
+| Enter | same as Check; after a wrong answer, same as Continue |
+
+Grading is generous on purpose: case, accents, punctuation, `to` and articles are all ignored,
+`ß` and `ss` are the same, and any sense from a list like `away, for, per, at, on, to, in, into`
+is accepted. **If it marks you wrong when you were right, that is worth telling me** — it is the
+most expensive kind of bug here.
+
+### What to watch for
+
+- **The card badge.** *You may know this one* means the assessment thinks you probably know it;
+  *New word* means it does not. No badge means it is a review.
+- **Speed.** After the first card, moving from one to the next should be instant, with no spinner
+  and no flicker. It is doing no network work at all — the whole session arrives in one request.
+- **Turn the wifi off mid-session.** It should keep working to the end. Your answers are sent when
+  it comes back. (A force-quit while offline can lose up to nine answers; those cards simply come
+  round again.)
+- **"Done for today".** When nothing is due it says so and offers no more work. That screen is the
+  point of the project, not an empty state.
+
 ---
 
 ## What to actually poke at
@@ -98,14 +136,13 @@ Not bugs. Each has a stage or milestone that closes it, and each is listed in `I
 
 | | |
 |---|---|
-| **No drill** | `/study` shows the "done for today" text no matter what. The real loop is M4 |
-| **Words run alphabetically inside a band** | A first session would be all `a…` words. Frequency ordering needs pipeline stage 1b |
-| **Second and third translations are noisy** | `house` → Haus, Kammer, Kind. The first one is right; picking the single best sense is stage 5's AI pass |
+| **Only one kind of exercise** | Target word → your language, typed. The reverse direction (production) and listening arrive at M6 and M5 |
 | **No example sentences** | Stage 7 |
 | **No audio** | Stage 8, so no listening exercises |
-| **No assessment** | M3, so nothing seeds your starting level |
+| **About one card in twenty is phrased oddly** | `succo` → "juice except tomato juice". Typing "juice" is accepted, but the card still reads badly. There is no review queue to fix them in yet |
 | **Settings is read-only** | You can see your email and export your data; you cannot change your language, timezone or limits yet |
-| **No streak, no notifications** | M7 |
+| **No streak, no notifications, no installable app** | M7 |
+| **Nothing has run on a phone** | The first deploy is the first real test of how this feels |
 
 ## If you get locked out
 
@@ -121,7 +158,7 @@ because there is no mail provider in this phase.
 ## Running the checks yourself
 
 ```bash
-npm test              # 102 tests: unit, database, API
+npm test              # 320 tests: unit, database, API
 npm run test:tz       # timezone-sensitive suites under UTC, Berlin, Auckland
 npm run test:privacy  # scans everything git would publish for names, keys, CDNs
 npm run typecheck

@@ -6,17 +6,17 @@ import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { assessments, bands, courses, enrollments, words } from "@/lib/db/schema";
+import { dayStatus } from "@/lib/study/session";
+import { systemClock } from "@/lib/time/clock";
 
 /**
- * The dashboard. M1 ships the shell and the session gate; the streak, due
- * count and staleness warning arrive with M4 and M7.
+ * The dashboard. M4 adds the real due count; the streak and the staleness
+ * warning arrive with M7.
  */
 export default async function DashboardPage() {
   const user = await requireUser();
   const t = await getTranslations();
 
-  // M1 shipped the shell; this is the first thing on it with a real number
-  // behind it. The due count and streak arrive with M4 and M7.
   const db = getDb();
   const [enrolled] = await db
     .select({ slug: courses.slug, name: courses.name, courseId: courses.id })
@@ -48,6 +48,11 @@ export default async function DashboardPage() {
     )
     .orderBy(desc(assessments.takenAt))
     .limit(1);
+
+  // The due count is read here rather than by starting a session: opening a
+  // `study_sessions` row from the dashboard would count every glance at it as
+  // a study session.
+  const status = await dayStatus(db, user.id, systemClock.now());
 
   const byBand = new Map<string, { number: number; count: number }>();
   for (const row of deck) {
@@ -93,12 +98,19 @@ export default async function DashboardPage() {
         )}
 
         {sitting ? (
-          <Link
-            href="/study"
-            className="mt-5 block rounded-lg bg-neutral-900 px-4 py-3 text-center font-medium text-white dark:bg-white dark:text-neutral-900"
-          >
-            {t("dashboard.startSession")}
-          </Link>
+          <>
+            <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400">
+              {t("dashboard.cardsDue", { count: status.dueNow })}
+            </p>
+            <Link
+              href={status.dueNow > 0 ? "/study" : "/study/done"}
+              className="mt-2 block rounded-lg bg-neutral-900 px-4 py-3 text-center font-medium text-white dark:bg-white dark:text-neutral-900"
+            >
+              {/* Nothing due sends the learner to the screen that says so,
+                  not into a drill that would have to invent work for them. */}
+              {status.dueNow > 0 ? t("dashboard.startSession") : t("done.title")}
+            </Link>
+          </>
         ) : (
           <Link
             href="/assessment"

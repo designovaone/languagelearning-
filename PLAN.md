@@ -72,10 +72,19 @@ Two measurements make this checkable rather than a matter of opinion:
 
 ### Current state
 
-**M0 and M1 complete (2026-08-17).** Test harness, clock discipline, privacy guard and CI; full
-schema live in Neon (Postgres 18, `eu-central-1`); invite-gated auth; i18n in `en` and `de`; GDPR
-export and erasure; admin scripts for invites and password resets. 87 tests green.
-**No content and no drill yet.** M2 (content pipeline) is next.
+**M0–M4 complete (2026-08-18).** Test harness, clock discipline, privacy guard and CI; full schema
+live in Neon (Postgres 18, `eu-central-1`); invite-gated auth; i18n in `en` and `de`; GDPR export and
+erasure; admin scripts. **14,904 words** loaded across two courses (`it-from-en` 7,083,
+`en-from-de` 7,821), each with a chosen primary sense. The **assessment** runs and seeds FSRS state
+from a fitted probability curve. The **drill** runs: one prefetch per session, grading and card
+transitions entirely on the device, idempotent background flush, server-side FSRS, review log,
+`daily_activity`, and a "done for today" screen that is a destination rather than an empty state.
+
+320 tests green; typecheck, lint, production build, privacy guard and the three-timezone sweep all
+clean.
+
+**Next: M5 (listening), then deploy and test on a real phone** — the only place the "instant, works
+in a dead spot" claim can actually be judged.
 
 ---
 
@@ -262,6 +271,14 @@ ai_calls            id, user_id?, tier, model, prompt_tokens, completion_tokens,
   word's `recognition` card reaches `state = Review` with `stability >= 7`. Prevents a day-one flood.
 - `elapsed_days` is deprecated in ts-fsrs 6.0. Keep the column (5.x still writes it); never read it
   in our own logic.
+- **The FSRS floats are `double precision`, not `real` — corrected at build time (M4).** `stability`
+  and `difficulty` on `cards`, and all four before/after columns on `reviews`. A `real` column is
+  float4, which keeps about seven significant digits; a stability written at a flush boundary comes
+  back rounded, and the next review computes from a slightly different number than it would have
+  inside one batch. That breaks the replay invariant in §7.4 — measured as `0.82816476` in one batch
+  against `0.8281648` across two. Far too small to see in a schedule, and fatal to an invariant.
+  A JavaScript number *is* a float8, so `double precision` round-trips exactly. Migration `0001`.
+  Found by the invariant test; a tolerance-based version of that test would have hidden it.
 - Every timestamp is `timestamptz`. `local_date` is a plain `date` computed in the **user's**
   timezone, never the server's.
 - `source` and `license` appear on every content table. A missing attribution is a licence breach,
@@ -641,6 +658,49 @@ Server-side, on `GET /api/study/session`:
 - Gating respected (§4)
 - Session target ~60 cards or ~10 minutes, whichever comes first
 
+Both daily caps are counted **in the learner's own day**, from the review log: a review whose
+`state_before` was `New` used the new-card allowance, anything else used the review allowance.
+Counting in the server's day would reset the limit at the wrong midnight — hand out a second full
+allowance to a learner studying at 23:00, or refuse the first. Neither looks like a bug.
+
+### The three kinds of card, and why the middle one has to be named — added at build time
+
+After the assessment a real learner's deck held **1,219** seeded `Review` cards, **4,381**
+`boundary` words (P(known) between 0.5 and 0.8) and **1,483** genuinely new ones. Only the `known`
+plans became card rows (§6), so the middle group and the last are *indistinguishable by card state*:
+both are simply words with no row.
+
+Ordering everything by frequency rank happens to put the boundary words first, because in this
+learner's data they are the more common ones. **That is a property of the data, not of the code.**
+So P(known) is computed per candidate from the fitted curve and used explicitly, and every queue
+entry carries the label it was ordered by — `review`, `boundary` or `fresh`. The UI shows it: 4,381
+half-known words presented as brand-new material misdescribes the learner's own deck back to them.
+
+The curve is **refitted from `assessment_items`** rather than stored. Its two parameters were never
+written to `assessments`, but every input that produced them is still there, so the fit is
+recoverable exactly — and a learner already assessed does not have to sit the test again for the
+drill to know what it knows.
+
+Ordering by `freq_rank` and labelling by P(known) is exact rather than approximate: the fitted curve
+is strictly decreasing in rank, so the top N by rank are the top N by P(known) whatever the
+learner's curve looks like. Only *where the boundary falls* is learner-specific.
+
+### The drill refuses to start without an assessment — decided at build time
+
+`/study` redirects to `/assessment`, and `GET /api/study/session` answers 409, for a learner with no
+finished sitting.
+
+Found by running the drill against the live database as an unassessed learner. The session came back
+`e` (and), `di` ("used to indicate possession"), `il` (the), `la` (the), `che` (that) — five function
+words, two with identical translations, one with a grammar note where a meaning should be. Nothing
+was broken: those are the five most frequent Italian words, and a frequency-ordered deck opens on
+them. ISSUES.md had recorded exactly this and asked for it to be *verified on the first real session
+rather than assumed*.
+
+Verified — and the verification only covered the assessed path. For an assessed learner the same
+query returns `regola`, `cliente`, `volto`, `minimo`: ordinary, teachable words. §6 already says
+everyone takes the assessment; this makes that structural instead of advisory.
+
 ### 7.2 "Done for today"
 
 **When nothing is due, the app says so and offers no grind.**
@@ -654,6 +714,23 @@ to continue structurally cannot offer it.
 Client-side for `recognition`, `production` and `listening`: normalized exact match against the
 accepted translation list (case, accents, punctuation and articles handled; multi-sense lists like
 `away, for, per, at, on, to, in, into` all accepted).
+
+**Two additions made at build time, both because of rows that are really in the deck.**
+
+- **ß folds to ss.** Both are correct German spellings, `en-from-de` learners answer in German, and
+  NFD does not decompose ß. Deliberately *not* done: folding `ue`/`oe`/`ae`, which would turn
+  "Steuer" into "Stuer" and break more than it fixes.
+- **A whole-word prefix of a long primary sense is accepted.** About 5% of the deck kept Wiktionary's
+  phrasing through stage 5 — `succo` → "juice except tomato juice", `svolazzare` → "to fly here and
+  there without precise direction". Typing "juice" is a correct answer by any standard a human would
+  use, and exact match calls it wrong. Restricted to a **prefix** on a word boundary, minimum three
+  characters, and only against `primary_sense` when that sense is a phrase: "juice" matching is the
+  intended case, "tomato" matching is not, and containment would accept both. The `translations`
+  list is a shortlist of clean senses where a prefix would be pure over-acceptance — "fir" must not
+  answer "firm".
+
+The asymmetry behind both: **marking a right answer wrong is the expensive error.** It sends a card
+the learner knew to `Again`, and it is the failure that costs their trust on day one.
 
 The FSRS grade is derived, never asked for:
 
@@ -677,6 +754,25 @@ recompute every card. Four columns turn an irreversible modelling choice into a 
 Client buffers reviews and flushes every ~10 cards, on `visibilitychange`, and at session end. Each
 review carries an idempotency key. The server runs `ts-fsrs` and writes `cards` + `reviews`
 transactionally.
+
+**Idempotency is enforced by reading the keys first and dropping the duplicates**, not by letting
+the unique index reject the insert. The difference is the whole point: a rejected insert still
+leaves the FSRS update applied, so a retried flush would advance every card in the batch a second
+time and push a week of reviews into next month — and report success. The unique index is the
+backstop; the read is the mechanism.
+
+**A review carries an offset, not a timestamp — decided at build time.** The device sends
+milliseconds since the session started, measured with `performance.now()`; the server adds it to the
+`started_at` it recorded itself, clamped to `[0, now]`. A device clock can be wrong by hours, and a
+wrong `reviewed_at` corrupts the streak, the daily limits and the replay order at once. An offset is
+monotonic on the device and anchored on the server, so neither side has to be trusted for something
+it cannot know.
+
+**Flushes are chained through a single promise, and that is a correctness requirement.** FSRS is
+order-dependent: folding a later batch into an earlier state produces a different answer and throws
+nothing. Batching does not change the result; *arrival order* does. Asserted in
+`tests/unit/fsrs/replay.test.ts` as a named property, so the reason the chaining exists stays visible
+to whoever next tries to parallelise it.
 
 Cards answered wrong are re-queued locally within the session (FSRS learning steps want them back
 within minutes); the server's computation remains the truth.
@@ -898,13 +994,30 @@ leaving the account, profile and enrollment alone. `--dry-run` prints the counts
   ±700-word bound that holds at every level including beginners, and bias under 200 words everywhere.
   Both first learners sit well above 2,500.
 
-### M4 — The drill loop · 2 days ← the core
+### M4 — The drill loop · 2 days ← the core ✅ **done 2026-08-18**
 
 Queue, prefetch, client grading, idempotent flush, server-side FSRS, review log, `daily_activity`,
 "done for today".
 
 - **Exit:** the replay invariant passes; double-flushing a batch changes nothing; **card-to-card
   issues zero network requests**
+
+All three exit criteria are asserted by tests rather than argued:
+`tests/db/study-flush.test.ts` runs one review log through six different batch splittings and
+compares every FSRS column; the double-flush test asserts the card states *did not move*, not merely
+that nothing threw; and `tests/unit/study/runner.test.tsx` counts `fetch` calls while nine cards are
+answered, expecting exactly the one prefetch.
+
+**Two things were found by running it, not by testing it** — the pattern this project keeps meeting:
+
+1. **The replay invariant genuinely failed**, on `real` (float4) columns. See §4. Fixed by migration
+   `0001`, and guarded by a test that asserts the *storage type*, because the behaviour is only wrong
+   in the last two digits.
+2. **An unassessed learner's drill opened on function words.** See §7.1. Fixed by gating `/study` on
+   a finished sitting.
+
+Also landed: the dashboard shows the real due count; `/study/done` is a route as well as a state;
+coverage thresholds are wired for `lib/fsrs`, `lib/study` and `lib/assessment` (§12).
 
 ### M5 — Listening · ½ day
 
@@ -1085,7 +1198,11 @@ The defence has to be structural. Anything depending on attention eventually fai
    Rule 2's shape, generalised
 4. **Coverage thresholds only where meaningful:** 90% lines on `lib/fsrs`, `lib/study`,
    `lib/streak`, `lib/assessment`. No global target. They are added with the code they guard, not
-   before it — a threshold over an empty directory is another vacuous pass
+   before it — a threshold over an empty directory is another vacuous pass.
+
+   **Wired at M4** for `lib/fsrs`, `lib/study` and `lib/assessment` (measured 100 / 99.5 / 91.4).
+   `lib/streak` lands at M7 with the streak. And the vacuous-pass worry was *checked* rather than
+   assumed: a threshold whose glob matches no files reports nothing at all, not a failure
 5. **Fixtures small and committed:** a 10-row corpus, a 500-row review log, 40 labelled answers
 
 ---

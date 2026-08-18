@@ -36,14 +36,22 @@
     "incorrect": "Not quite",
     "expected": "Expected",
     "typeAnswer": "Type your answer",
-    "progress": "{done} of {total}"
+    "progress": "{done} of {total}",
+    "check": "Check",
+    "continue": "Continue",
+    "loading": "Getting your cards…",
+    "failed": "Could not load your session. Try again in a moment.",
+    "kindNew": "New word",
+    "kindBoundary": "You may know this one"
   },
   "done": {
     "title": "Done for today",
     "body": "Nothing is due. Coming back tomorrow is the whole point.",
     "cardsReviewed": "{count, plural, one {# card reviewed} other {# cards reviewed}}",
     "minutes": "{count, plural, one {# minute} other {# minutes}}",
-    "nextDue": "Next card due {when}."
+    "nextDue": "Next card due {when}.",
+    "todayLabel": "Today",
+    "timeLabel": "Time spent"
   },
   "assessment": {
     "title": "How many words do you know?",

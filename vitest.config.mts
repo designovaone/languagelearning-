@@ -17,8 +17,20 @@ export default defineConfig({
       provider: "v8",
       include: ["lib/**/*.ts"],
       reporter: ["text", "html"],
-      // Thresholds land with the code they guard (PLAN.md §12): 90% lines on
-      // lib/fsrs, lib/study, lib/streak, lib/assessment. No global target.
+      // PLAN.md §12: 90% lines on the modules where a silent wrong answer is
+      // expensive. No global target — a repo-wide number rewards testing the
+      // easy files and says nothing about the hard ones.
+      //
+      // `lib/streak` is named in the plan and lands at M7 with the streak
+      // itself. A threshold pointing at a directory that does not exist is the
+      // vacuous-pass problem in another costume — and this was checked rather
+      // than assumed: a glob matching no files reports nothing at all, not a
+      // failure. So a threshold is added only once there is code under it.
+      thresholds: {
+        "lib/fsrs/**": { lines: 90 },
+        "lib/study/**": { lines: 90 },
+        "lib/assessment/**": { lines: 90 },
+      },
     },
   },
 });

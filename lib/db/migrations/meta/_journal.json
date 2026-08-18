@@ -8,6 +8,13 @@
       "when": 1786981417422,
       "tag": "0000_freezing_vivisector",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787055913942,
+      "tag": "0001_flawless_quicksilver",
+      "breakpoints": true
     }
   ]
 }

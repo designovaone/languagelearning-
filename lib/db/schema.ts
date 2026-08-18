@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   date,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -260,8 +261,22 @@ export const cards = pgTable(
 
     // --- ts-fsrs Card, one column per field, no JSON blob ---
     due: timestamp("due", { withTimezone: true }).notNull(),
-    stability: real("stability").notNull().default(0),
-    difficulty: real("difficulty").notNull().default(0),
+    /**
+     * **`double precision`, not `real`, and the difference is load-bearing.**
+     *
+     * PLAN.md §7.4 requires that replaying a review log reproduces the same
+     * card states however the flushes were batched. A `real` column is float4:
+     * a value written at a batch boundary comes back rounded to about seven
+     * significant digits, so the next review starts from a slightly different
+     * number than it would have inside one batch. The states then diverge in
+     * the last few bits — enough to fail the invariant, far too little to
+     * notice in a schedule. Found by the invariant test, which is the only
+     * thing that could have found it.
+     *
+     * A JavaScript number *is* a float8, so this column round-trips exactly.
+     */
+    stability: doublePrecision("stability").notNull().default(0),
+    difficulty: doublePrecision("difficulty").notNull().default(0),
     /** Deprecated in ts-fsrs 6.0. Kept because 5.x still writes it; never read. */
     elapsedDays: integer("elapsed_days").notNull().default(0),
     scheduledDays: integer("scheduled_days").notNull().default(0),
@@ -334,11 +349,14 @@ export const reviews = pgTable(
 
     // --- ts-fsrs before/after, so a replay can be verified ---
     stateBefore: smallint("state_before").notNull(),
-    stabilityBefore: real("stability_before").notNull(),
-    difficultyBefore: real("difficulty_before").notNull(),
+    // `double precision` for the same reason as on `cards`: these are what a
+    // replay is checked against, and a check that is right to seven digits is
+    // not a check.
+    stabilityBefore: doublePrecision("stability_before").notNull(),
+    difficultyBefore: doublePrecision("difficulty_before").notNull(),
     dueBefore: timestamp("due_before", { withTimezone: true }).notNull(),
-    stabilityAfter: real("stability_after").notNull(),
-    difficultyAfter: real("difficulty_after").notNull(),
+    stabilityAfter: doublePrecision("stability_after").notNull(),
+    difficultyAfter: doublePrecision("difficulty_after").notNull(),
     scheduledDays: integer("scheduled_days").notNull(),
     elapsedDays: integer("elapsed_days").notNull(),
 

@@ -36,14 +36,22 @@
     "incorrect": "Nicht ganz",
     "expected": "Erwartet",
     "typeAnswer": "Antwort eingeben",
-    "progress": "{done} von {total}"
+    "progress": "{done} von {total}",
+    "check": "Prüfen",
+    "continue": "Weiter",
+    "loading": "Deine Karten werden geladen…",
+    "failed": "Die Sitzung konnte nicht geladen werden. Bitte gleich noch einmal versuchen.",
+    "kindNew": "Neues Wort",
+    "kindBoundary": "Kennst du vielleicht schon"
   },
   "done": {
     "title": "Für heute fertig",
     "body": "Nichts mehr fällig. Morgen wiederzukommen ist genau der Sinn der Sache.",
     "cardsReviewed": "{count, plural, one {# Karte wiederholt} other {# Karten wiederholt}}",
     "minutes": "{count, plural, one {# Minute} other {# Minuten}}",
-    "nextDue": "Nächste Karte fällig {when}."
+    "nextDue": "Nächste Karte fällig {when}.",
+    "todayLabel": "Heute",
+    "timeLabel": "Zeit"
   },
   "assessment": {
     "title": "Wie viele Wörter kennst du?",
