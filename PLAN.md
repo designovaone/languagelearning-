@@ -564,6 +564,24 @@ true size of 6,500) once a fixed 6% lapse rate was written into the likelihood.
 standard deviations, at every level. A bare figure would claim a precision the measurement does not
 have.
 
+### Seeding reads the fitted curve, not the band average — corrected after the first honest sitting
+
+Part C originally seeded from the **band** curve. The first real sitting exposed what that means in
+practice: a learner estimated at **4,520 known words was seeded zero cards.**
+
+Italian has three bands of 2,000–3,000 words, so a band average only clears the 0.8 bar for a
+near-fluent learner. Everyone else gets an estimate with nothing behind it — and the failure is
+silent, because the number on screen is right. The estimate and the seeding were computed from
+different models and nothing compared them.
+
+Seeding now uses each word's own P(known) from the fitted frequency curve (§6, above), which is the
+better estimator and was already being computed for the size figure. The same sitting now seeds
+1,219 cards as known, 4,381 as prioritised-new at the boundary, and 1,483 as new.
+
+The gap between 4,520 estimated and 1,219 seeded is deliberate, and it is the asymmetry again: a
+word only becomes a `Review` card at P ≥ 0.8. The rest start `New`, appear early, and FSRS pushes
+them out within two or three reviews if the learner does know them.
+
 ### Seeded cards are spread across the interval
 
 P(known) is a band-level number, so every word in a band shares a stability, and the obvious

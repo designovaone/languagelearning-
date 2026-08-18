@@ -12,7 +12,7 @@ import {
   words,
 } from "@/lib/db/schema";
 
-import { estimateSizeFromFit, fitCurve, type FitObservation } from "./fit";
+import { estimateSizeFromFit, fitCurve, pKnown, type FitObservation } from "./fit";
 import { buildPartA, type Item, type WordCandidate } from "./items";
 import { bandCurve, scorePartA, type AnsweredItem } from "./score";
 import { planSeeding, summarise } from "./seed";
@@ -223,9 +223,18 @@ export async function submitAssessment(
   const fit = fitCurve(observations, score.falseAlarmRate, maxRank);
   const estimatedSize = estimateSizeFromFit(fit, ranks);
 
+  // Per-word probability from the fitted curve, not the band average. The
+  // band curve is still stored on the sitting because it is what a human can
+  // read; it is far too coarse to seed from.
   const plans = planSeeding(
-    deck.map((w) => ({ wordId: w.wordId, bandNumber: w.bandNumber, freqRank: w.freqRank })),
-    curve,
+    deck.map((w) => ({
+      wordId: w.wordId,
+      bandNumber: w.bandNumber,
+      freqRank: w.freqRank,
+      pKnown: w.freqRank
+        ? pKnown(fit, w.freqRank)
+        : (curve[w.bandNumber] ?? 0),
+    })),
     now,
   );
   const seeded = summarise(plans);

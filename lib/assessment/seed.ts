@@ -19,13 +19,22 @@
 
 import { State } from "ts-fsrs";
 
-import type { BandCurve } from "./score";
-
 export type SeedTarget = {
   wordId: string;
   bandNumber: number;
   /** Blended frequency rank (stage 1b). Decides where in the window it lands. */
   freqRank: number | null;
+  /**
+   * P(this learner knows *this word*), from the fitted frequency curve.
+   *
+   * Per word, not per band. Seeding originally read the band average, and on
+   * the first honest sitting that produced an estimate of 4,520 known words
+   * and **zero seeded cards**: Italian has three bands, so a learner has to
+   * clear 80% of a 3,000-word band before a single card is seeded, which only
+   * a near-fluent learner ever does. The estimate and the seeding disagreed
+   * completely, and nothing reported it — the number looked right.
+   */
+  pKnown: number;
 };
 
 export type SeedPlan = {
@@ -90,21 +99,16 @@ function dueDays(
 }
 
 /**
- * One plan entry per word.
+ * One plan entry per word, from that word's own P(known).
  *
- * A band with no point on the curve is treated as unknown, not skipped. An
- * unsampled band means no evidence, and no evidence must never read as
- * "known" — that is the same asymmetry again.
+ * A word with no evidence behind it arrives with `pKnown` at 0 and is seeded
+ * `New`. No evidence must never read as "known" — the same asymmetry as above.
  */
-export function planSeeding(
-  targets: SeedTarget[],
-  curve: BandCurve,
-  now: Date,
-): SeedPlan[] {
+export function planSeeding(targets: SeedTarget[], now: Date): SeedPlan[] {
   // Rank the words that will be seeded, rarest first, and map each to its
   // fractional position in the interval.
   const seeded = targets
-    .filter((t) => (curve[t.bandNumber] ?? 0) >= KNOWN_THRESHOLD)
+    .filter((t) => t.pKnown >= KNOWN_THRESHOLD)
     .sort((a, b) => (b.freqRank ?? 0) - (a.freqRank ?? 0));
   const spread = new Map<string, number>();
   seeded.forEach((target, index) => {
@@ -112,7 +116,7 @@ export function planSeeding(
   });
 
   return targets.map((target) => {
-    const p = curve[target.bandNumber] ?? 0;
+    const p = target.pKnown;
 
     if (p >= KNOWN_THRESHOLD) {
       const stability = stabilityFor(p);

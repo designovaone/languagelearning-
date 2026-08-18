@@ -189,8 +189,12 @@ describe("simulated learners", () => {
     const { falseAlarmRate } = scorePartA(answered);
     const curve = bandCurve(answered, falseAlarmRate);
     const plans = planSeeding(
-      DECK.map((w) => ({ wordId: w.wordId, bandNumber: w.bandNumber, freqRank: w.freqRank })),
-      curve,
+      DECK.map((w) => ({
+        wordId: w.wordId,
+        bandNumber: w.bandNumber,
+        freqRank: w.freqRank,
+        pKnown: curve[w.bandNumber] ?? 0,
+      })),
       new Date("2026-08-18T09:00:00Z"),
     );
     expect(summarise(plans).known).toBe(0);
@@ -305,10 +309,11 @@ describe("seeded cards are spread over the interval", () => {
     wordId: w.wordId,
     bandNumber: w.bandNumber,
     freqRank: w.freqRank,
+    pKnown: CURVE[w.bandNumber as 1 | 2 | 3] ?? 0,
   }));
 
   it("does not pile every card onto one day", () => {
-    const plans = planSeeding(targets, CURVE, NOW).filter((p) => p.reason === "known");
+    const plans = planSeeding(targets, NOW).filter((p) => p.reason === "known");
     expect(plans.length).toBeGreaterThan(1000);
 
     const days = new Set(plans.map((p) => p.due.toISOString().slice(0, 10)));
@@ -319,14 +324,14 @@ describe("seeded cards are spread over the interval", () => {
   it("never schedules a seeded card for today", () => {
     // A card seeded as known and due immediately is the worst of both: it
     // claims the learner knows it and shows it to them anyway.
-    const plans = planSeeding(targets, CURVE, NOW).filter((p) => p.reason === "known");
+    const plans = planSeeding(targets, NOW).filter((p) => p.reason === "known");
     for (const plan of plans) {
       expect(plan.due.getTime()).toBeGreaterThan(NOW.getTime());
     }
   });
 
   it("brings rarer words back sooner than common ones", () => {
-    const plans = planSeeding(targets, CURVE, NOW).filter((p) => p.reason === "known");
+    const plans = planSeeding(targets, NOW).filter((p) => p.reason === "known");
     const byId = new Map(DECK.map((w) => [w.wordId, w.freqRank as number]));
     const sorted = [...plans].sort((a, b) => a.due.getTime() - b.due.getTime());
     const firstRank = byId.get(sorted[0].wordId) as number;
@@ -337,8 +342,8 @@ describe("seeded cards are spread over the interval", () => {
   });
 
   it("is deterministic — the same input gives the same schedule", () => {
-    const a = planSeeding(targets, CURVE, NOW);
-    const b = planSeeding(targets, CURVE, NOW);
+    const a = planSeeding(targets, NOW);
+    const b = planSeeding(targets, NOW);
     expect(a.map((p) => p.due.toISOString())).toEqual(b.map((p) => p.due.toISOString()));
   });
 });

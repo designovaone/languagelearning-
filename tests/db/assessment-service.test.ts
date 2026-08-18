@@ -147,6 +147,40 @@ describe("assessment service", () => {
     expect(items.every((item) => item.durationMs === 1500)).toBe(true);
   });
 
+  it("seeds a REAL number of cards for a mid-level learner", async () => {
+    // The failure this catches shipped and was found by using the app. A real
+    // sitting estimated 4,520 known words and seeded ZERO cards, because
+    // seeding read the three-band average and Italian bands are 2,000-3,000
+    // words wide — a learner must clear 80% of a whole band before one card is
+    // seeded. The estimate and the seeding disagreed completely and the number
+    // on screen looked right.
+    //
+    // Seeding now reads each word's own P(known) from the fitted curve.
+    const started = await startAssessment(db, USER, PSEUDO, NOW, 21);
+    const stored = await db
+      .select()
+      .from(schema.assessmentItems)
+      .where(eq(schema.assessmentItems.assessmentId, started!.assessmentId));
+    const byIndex = new Map(
+      stored.map((row) => [Number(String(row.id).split(":").pop()), row]),
+    );
+
+    // Knows the common half, claims one trap in ten. Roughly a real learner.
+    const answers = started!.items.map((item, i) => {
+      const row = byIndex.get(item.index)!;
+      const known = row.isReal ? i % 3 !== 0 : i % 10 === 0;
+      return { index: item.index, answeredKnown: known };
+    });
+
+    const result = await submitAssessment(db, USER, started!.assessmentId, answers, NOW);
+    expect(result!.estimatedSize).toBeGreaterThan(0);
+    // The core invariant: an estimate above zero must put cards behind it.
+    expect(result!.seeded.known).toBeGreaterThan(0);
+
+    const cards = await db.select().from(schema.cards).where(eq(schema.cards.userId, USER));
+    expect(cards.length).toBe(result!.seeded.known);
+  });
+
   it("refuses to submit another learner's sitting", async () => {
     await seedMinimal(db, { userId: "u_other", words: 5 });
     const started = await startAssessment(db, USER, PSEUDO, NOW, 5);
