@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import messages from "@/lib/i18n/messages/en.json";
+import deMessages from "@/lib/i18n/messages/de.json";
 
 import { StudyRunner } from "@/app/(app)/study/study-runner";
 
@@ -150,6 +151,63 @@ describe("the drill runs on the device", () => {
     expect(first).not.toHaveProperty("rating");
     expect(first).not.toHaveProperty("due");
   }, 30_000);
+});
+
+describe("the German half of the drill", () => {
+  /**
+   * One of the two learners uses the app entirely in German, and a
+   * half-translated screen is the most likely quiet failure in this project —
+   * it is nobody's bug and it is her whole experience.
+   *
+   * The message-parity test already proves the two files have the same keys
+   * and the same ICU placeholders. What it cannot prove is that this component
+   * asks for the keys it thinks it does: `t("study.check")` on a namespace
+   * that does not exist renders the key path, silently, in both languages.
+   * So the drill is actually rendered in German and the strings are read.
+   */
+  function mountGerman() {
+    return render(
+      <NextIntlClientProvider locale="de" messages={deMessages}>
+        <StudyRunner />
+      </NextIntlClientProvider>,
+    );
+  }
+
+  it("renders a card, its controls and a verdict in German", async () => {
+    const user = userEvent.setup();
+    mountGerman();
+    await screen.findByText("parola0");
+
+    expect(screen.getByRole("button", { name: "Prüfen" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tipp" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Lösung zeigen" })).toBeTruthy();
+    expect(screen.getByText("Kennst du vielleicht schon")).toBeTruthy();
+
+    const field = screen.getByLabelText("Antwort eingeben");
+    await user.type(field, "falsch");
+    await user.click(screen.getByRole("button", { name: "Prüfen" }));
+    expect(screen.getByText("Nicht ganz")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Weiter" })).toBeTruthy();
+  }, 30_000);
+
+  it("renders 'done for today' in German", async () => {
+    fetchMock.mockImplementation(
+      async () =>
+        new Response(JSON.stringify(session([])), {
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    mountGerman();
+    await screen.findByText("Für heute fertig");
+  });
+
+  it("leaks no untranslated key path into the rendered output", async () => {
+    // The failure this guards: `t("study.check")` against the wrong namespace
+    // renders the literal key, in every language, without erroring.
+    mountGerman();
+    await screen.findByText("parola0");
+    expect(document.body.textContent ?? "").not.toMatch(/study\.|done\.|nav\./);
+  });
 });
 
 describe("what the learner sees", () => {
