@@ -51,7 +51,17 @@
     "know": "I know this",
     "dontKnow": "I don't",
     "estimatedSize": "You know roughly {count} words.",
-    "retakeHint": "This repeats every few months, so it becomes a progress measure."
+    "retakeHint": "This repeats every few months, so it becomes a progress measure.",
+    "begin": "Start",
+    "working": "One moment…",
+    "failed": "Something went wrong. Try again.",
+    "estimateBody": "That is the range this test can actually resolve — it is a quick measure, not an exact count.",
+    "statClaimed": "Real words you knew",
+    "statTraps": "Invented ones you claimed",
+    "statKnown": "Cards marked known",
+    "statNew": "Cards still to learn",
+    "backToDashboard": "Back to the dashboard",
+    "retake": "Test my level again"
   },
   "settings": {
     "title": "Settings",

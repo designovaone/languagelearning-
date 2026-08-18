@@ -21,9 +21,11 @@ into `PLAN.md`. Nothing gets deleted just because it stopped being annoying.
 | **A handful of cards are still weak** | From the 100-word hand-check: `succo` → "juice except tomato juice" and `svolazzare` → "to fly here and there without precise di…" keep Wiktionary phrasing; `aziendale` (adj.) → "firm" (a noun); `paramount` → "hervorragend" rather than "vorrangig". Roughly 5%. Not worth another pass on its own — fold into a review queue if one is built | admin review queue |
 | **Two rows are stage 4 residue** | `would` → "We sat on the bench" (English usage examples leaked into the German translation field — the only such row in 7,821), and Italian `pinna` carries the *English* noun's definitions (ear/auricle) rather than "fin". Fixing either means re-running the 3.2 GB stage 4 extraction | stage 4, if ever re-run |
 | **No audio** | `listening` cards cannot render | stage 8 |
-| **No drill** | `/study` renders the "done for today" copy unconditionally. It is a session-gate placeholder, not the loop | M4 |
-| **No assessment** | Nothing seeds FSRS state, so even with content every card would start `New` | M3 |
-| **No way to reset a learner** | There is no script to clear FSRS state, reviews or assessment results. A real assessment run seeds cards, so a second run lands on top of the first — which makes the cheapest human validity check (*run it twice, do the two estimates agree?*) impossible. Ships **with** M3, not after: `scripts/reset-learner.ts`, same shape as `reset-password.ts` | M3 |
+| **No drill** | `/study` renders the "done for today" copy unconditionally. It is a session-gate placeholder, not the loop. **The assessment now seeds real cards, so there is something for it to show** | M4 |
+| ~~No assessment~~ | **Fixed.** Part A (yes/no with pseudoword traps) and Part C (seed FSRS) are live at `/assessment`, verified against the live database | — |
+| ~~No way to reset a learner~~ | **Fixed.** `npm run reset-learner -- --email <address>` (`--dry-run` first). Deletes progress, keeps identity; a test asserts it covers every user-owned table in the schema | — |
+| **Assessment Part B and Part D have no UI** | The measured-recall calibration (`calibration`, `calibrate` in `lib/assessment/score.ts`) and the ~15 boundary items (`buildPartB`) are written and tested, but nothing renders them. Part A plus the frequency fit already produces the estimate; Part B is a precision refinement. Re-assessment (Part D) works today only by running the reset script first | M3 follow-up |
+| **The estimate is a recognition measure, not a recall one** | "I know this" is self-report about recognising a written word. It says nothing about producing the word, and the seeded cards are `recognition` only. Production and listening cards remain ungated until the drill exists | M4 |
 
 ## Working, but thinner than it looks
 

@@ -1,11 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
-import { bands, courses, enrollments, words } from "@/lib/db/schema";
+import { assessments, bands, courses, enrollments, words } from "@/lib/db/schema";
 
 /**
  * The dashboard. M1 ships the shell and the session gate; the streak, due
@@ -32,6 +32,16 @@ export default async function DashboardPage() {
         .innerJoin(bands, eq(bands.id, words.bandId))
         .where(eq(words.courseId, enrolled.courseId))
     : [];
+
+  // Whether they have ever been assessed decides what this page offers. An
+  // unassessed learner sent straight to the drill would meet 7,000 cards all
+  // marked new, including every word they already know.
+  const [sitting] = await db
+    .select({ id: assessments.id, size: assessments.estimatedSize })
+    .from(assessments)
+    .where(eq(assessments.userId, user.id))
+    .orderBy(desc(assessments.takenAt))
+    .limit(1);
 
   const byBand = new Map<string, { number: number; count: number }>();
   for (const row of deck) {
@@ -76,17 +86,29 @@ export default async function DashboardPage() {
           </ul>
         )}
 
-        <Link
-          href="/study"
-          className="mt-5 block rounded-lg bg-neutral-900 px-4 py-3 text-center font-medium text-white dark:bg-white dark:text-neutral-900"
-        >
-          {t("dashboard.startSession")}
-        </Link>
+        {sitting ? (
+          <Link
+            href="/study"
+            className="mt-5 block rounded-lg bg-neutral-900 px-4 py-3 text-center font-medium text-white dark:bg-white dark:text-neutral-900"
+          >
+            {t("dashboard.startSession")}
+          </Link>
+        ) : (
+          <Link
+            href="/assessment"
+            className="mt-5 block rounded-lg bg-neutral-900 px-4 py-3 text-center font-medium text-white dark:bg-white dark:text-neutral-900"
+          >
+            {t("assessment.title")}
+          </Link>
+        )}
       </section>
 
       <nav className="flex gap-4 text-sm">
         <Link href="/settings" className="underline">
           {t("nav.settings")}
+        </Link>
+        <Link href="/assessment" className="underline">
+          {sitting ? t("assessment.retake") : t("assessment.title")}
         </Link>
       </nav>
 

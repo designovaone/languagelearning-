@@ -20,7 +20,9 @@
     "db:studio": "drizzle-kit studio",
     "invite": "tsx scripts/create-invite.ts",
     "reset-password": "tsx scripts/reset-password.ts",
-    "corpus:load": "tsx scripts/load-corpus.ts"
+    "corpus:load": "tsx scripts/load-corpus.ts",
+    "reset-learner": "tsx scripts/reset-learner.ts",
+    "pseudowords": "python3 pipeline/stages/20_pseudowords.py"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

@@ -51,7 +51,17 @@
     "know": "Kenne ich",
     "dontKnow": "Kenne ich nicht",
     "estimatedSize": "Du kennst ungefähr {count} Wörter.",
-    "retakeHint": "Das wiederholt sich alle paar Monate und wird so zum Fortschrittsmaß."
+    "retakeHint": "Das wiederholt sich alle paar Monate und wird so zum Fortschrittsmaß.",
+    "begin": "Starten",
+    "working": "Einen Moment…",
+    "failed": "Da ist etwas schiefgegangen. Bitte noch einmal versuchen.",
+    "estimateBody": "Das ist der Bereich, den dieser Test wirklich auflösen kann — eine schnelle Schätzung, keine genaue Zählung.",
+    "statClaimed": "Echte Wörter, die du kanntest",
+    "statTraps": "Erfundene, die du angegeben hast",
+    "statKnown": "Als bekannt markierte Karten",
+    "statNew": "Noch zu lernende Karten",
+    "backToDashboard": "Zurück zur Übersicht",
+    "retake": "Level erneut testen"
   },
   "settings": {
     "title": "Einstellungen",
