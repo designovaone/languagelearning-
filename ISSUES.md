@@ -44,6 +44,7 @@ into `PLAN.md`. Nothing gets deleted just because it stopped being annoying.
 
 | | |
 |---|---|
+| **The final origin is not chosen yet** | `<project>.vercel.app` or a custom domain. A PWA binds permanently to the origin it was installed from, so changing it after M7 costs a re-install evening with both learners present. **Must be settled before M7**, and it costs nothing to settle earlier |
 | **`BETTER_AUTH_URL` is `http://localhost:3000`** | Correct locally, wrong the moment this deploys. **The PWA install, the service worker scope and every push subscription bind permanently to the origin they were created on** (PLAN §13). Change it as part of the first deploy, not after |
 | ~~`drizzle-kit` does not read `.env.local`~~ | **Fixed.** Every database script now runs through `node --env-file-if-exists=.env.local`, so `npm run db:migrate`, `invite`, `reset-password`, `reset-learner` and `corpus:load` all work directly. `--env-file-if-exists` rather than `--env-file` so CI, where the values come from the environment itself, does not fail on a missing file |
 | **`.env.local` values need quoting** | The Neon URL contains `&`, which breaks `set -a; . ./.env.local`. `DATABASE_URL` is quoted for that reason |
@@ -70,3 +71,8 @@ Listed so they are not rediscovered as bugs.
 - **`grammar_items.created_by` holds `'nightly'` / `'manual'`, not a user id.** The GDPR sweep excludes it explicitly for that reason.
 - **`audio_assets` carries `source` but no `license`.** The licence is the model's, recorded once in the generated attribution file rather than on every row.
 - **The invite code alphabet omits `O`, `0`, `I`, `1` and `L`.** These get read aloud.
+- **An orphaned commit on the public remote still contains a first name.** History was rewritten and
+  force-pushed, so it is unreachable by browsing and gone from every branch; GitHub keeps orphans
+  addressable by their full SHA until it garbage-collects, which only their support can trigger.
+  **Decision (2026-08-18): accepted, no action.** It is a bare first name with nothing linked to it,
+  and the SHA appears in no tracked file. Revisit only if the repo ever carries more than that.
