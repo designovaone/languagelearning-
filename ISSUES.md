@@ -23,6 +23,7 @@ into `PLAN.md`. Nothing gets deleted just because it stopped being annoying.
 | **No audio** | `listening` cards cannot render | stage 8 |
 | **No drill** | `/study` renders the "done for today" copy unconditionally. It is a session-gate placeholder, not the loop | M4 |
 | **No assessment** | Nothing seeds FSRS state, so even with content every card would start `New` | M3 |
+| **No way to reset a learner** | There is no script to clear FSRS state, reviews or assessment results. A real assessment run seeds cards, so a second run lands on top of the first — which makes the cheapest human validity check (*run it twice, do the two estimates agree?*) impossible. Ships **with** M3, not after: `scripts/reset-learner.ts`, same shape as `reset-password.ts` | M3 |
 
 ## Working, but thinner than it looks
 
@@ -44,6 +45,7 @@ into `PLAN.md`. Nothing gets deleted just because it stopped being annoying.
 | **`drizzle-kit` does not read `.env.local`** | Run migrations as `node --env-file=.env.local node_modules/drizzle-kit/bin.cjs migrate`. A bare `npm run db:migrate` finds no URL and stops |
 | **`.env.local` values need quoting** | The Neon URL contains `&`, which breaks `set -a; . ./.env.local`. `DATABASE_URL` is quoted for that reason |
 | **Migrations run against the pooled endpoint** | It works today. If a future migration needs a session-level lock, the direct (non-pooler) endpoint may be required |
+| **Nudge delivery is checked by hand, by design** | Accepted 2026-08-18. With two learners a missed reminder is noticed the same day. The `cron_runs` staleness warning and heartbeat still ship at M7 — those catch a *silent* stop. Delivery receipts, retries and per-device failure tracking are deferred. **Revisit before a third learner**, whose missed reminders nobody else would see |
 | **No rate limiting configured on sign-in** | Better Auth ships defaults; nothing here has been tuned or tested. Worth a look before the URL is public |
 
 ## Test-suite debt

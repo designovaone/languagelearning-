@@ -794,12 +794,22 @@ Stages 1–9 (§5), each writing a checked-in artifact. Attribution file generat
 
 ### M3 — Assessment · 1.5 days
 
-Parts A–D (§6).
+Parts A–D (§6), plus `scripts/reset-learner.ts`.
+
+**The reset script ships with M3, not after it.** A real assessment run seeds FSRS state, so the
+second practice run lands on top of the first and neither can be judged. Without a way back to
+zero, the assessment can be tested exactly once per learner — and the cheapest validity check
+available to a person is *running it twice and seeing whether the two estimates agree*. Same shape
+as `reset-password.ts`: local, admin-only, reads the confirmation from stdin.
+
+Scope: clear `cards`, `reviews`, `assessments`, `daily_activity` and streak rows for one user,
+leaving the account, profile and enrollment alone. `--dry-run` prints the counts it would delete.
 
 - **Exit:** 1,000 generated pseudoword candidates contain zero real words (checked against the full
   Wiktionary lemma list); monotonicity holds; a simulated learner of known true size is estimated
   within ±15% in ≥90% of 500 runs; **a learner who taps "I know this" on everything is scored down,
-  not placed at C2**
+  not placed at C2**; the reset script returns a learner to a state where re-assessment behaves
+  identically to a first assessment
 
 ### M4 — The drill loop · 2 days ← the core
 
@@ -827,6 +837,14 @@ logging from the first call. Per-user budget.
 ### M7 — Streak, PWA, nudge · 1.5 days
 
 §9 in full.
+
+**Nudge reliability is deliberately phased** (decided 2026-08-18). Delivery is *checked by hand*
+for the first weeks rather than monitored — with two learners, a missed reminder is noticed the
+same day and costs nothing. The engineering that makes it self-reporting (the `cron_runs`
+staleness warning and the heartbeat in §9.3) still ships with M7, because both are cheap and the
+failure they catch is silent. What is deferred is anything beyond that: delivery receipts,
+retries, per-device failure tracking. **Revisit before a third learner joins** — manual checking
+does not survive people whose missed reminders nobody else sees.
 
 - **Exit:** both phones show a notification at the right local time on a DST-shifted date; firing
   the endpoint four times in one day sends exactly one notification per user; streak tests pass
