@@ -580,6 +580,25 @@ The same learner now sees ~245 cards a day rather than 4,906 in one sitting.
 Turns onboarding into a progress instrument, and provides the vocabulary-size measurement the
 success criterion in §1 needs.
 
+### A pseudoword must not be a near-neighbour of a real word
+
+**Found from the first real sitting, not from a test.** The first learner produced a 30% false-alarm
+rate — six of twenty traps claimed. Inspecting the pool explained it: **20% of candidates sat one
+edit from a word in the learner's own deck.** `affetare` beside `affettare`, `appunte` beside
+`appunto`, `atimo` beside `attimo`.
+
+Those are not traps. A fluent reader does not read letter by letter, so recognising `affetare` as a
+word they know is correct reading, not over-claiming — and a trigram model trained on real words
+produces such near-neighbours by construction.
+
+The damage is worse than a wasted item, because a false alarm is *subtracted*. A confusable trap
+does not merely fail to measure over-claiming; it **actively understates how much the learner
+knows**. The correction designed to stop over-claiming was penalising competence.
+
+So a candidate is rejected if any word among the ~20,000 most frequent, plus the whole curated deck,
+is one insertion, deletion or substitution away. That is 0% of the pool now, against 20% before, and
+it is asserted over the output rather than trusted from the generation loop.
+
 ### Pseudowords must be generated, not borrowed
 
 Published item lists are fixed, so they can be taken exactly once before being memorised — useless

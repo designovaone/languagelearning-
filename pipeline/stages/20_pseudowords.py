@@ -89,6 +89,10 @@ MIN_POOL = 1000
 #: ordinary vocabulary rather than of the long tail of rare compounds.
 TRAIN_TOP = 30_000
 
+#: Words a learner could plausibly recognise, for the confusability check below.
+#: Not the full corpus: being one edit from a word nobody uses confuses nobody.
+NEIGHBOUR_TOP = 20_000
+
 MIN_LEN, MAX_LEN = 4, 11
 MAX_ATTEMPTS = 400_000
 
@@ -164,6 +168,34 @@ def generate(model: dict[tuple[str, str], Counter], rng: random.Random) -> str |
     return "".join(out)
 
 
+def has_close_neighbour(word: str, vocab: frozenset[str], letters: str) -> bool:
+    """True if a real word is one insertion, deletion or substitution away.
+
+    **The reason this exists is a learner's data, not a theory.** The first real
+    sitting produced a 30% false-alarm rate, and inspecting the pool explained
+    it: 20% of candidates sat one edit from a word in the learner's own deck --
+    `affetare` beside `affettare`, `appunte` beside `appunto`, `atimo` beside
+    `attimo`. Those are not traps. A fluent reader does not read letter by
+    letter, so recognising `affetare` as a word they know is correct reading
+    rather than over-claiming.
+
+    The damage is worse than a wasted item. A false alarm is *subtracted* from
+    the score, so a confusable trap does not merely fail to measure
+    over-claiming -- it actively understates how much the learner knows.
+    """
+    for i in range(len(word) + 1):
+        if i < len(word):
+            if word[:i] + word[i + 1 :] in vocab:
+                return True
+            for char in letters:
+                if char != word[i] and word[:i] + char + word[i + 1 :] in vocab:
+                    return True
+        for char in letters:
+            if word[:i] + char + word[i:] in vocab:
+                return True
+    return False
+
+
 def plausible(word: str, alphabet: set[str], vowels: set[str]) -> bool:
     if not MIN_LEN <= len(word) <= MAX_LEN:
         return False
@@ -218,6 +250,10 @@ def run(lang: str, spec: dict) -> int:
     real.discard("")
 
     ranked = read_jsonl_field(paths["freq"], "lemma")
+    # Ordered by frequency, so the head is what a learner might recognise.
+    neighbours = frozenset(ranked[:NEIGHBOUR_TOP]) | frozenset(
+        read_jsonl_field(paths["words"], "lemma")
+    )
     alphabet = set(spec["alphabet"])
     vowels = set("aeiouàèéìòù") & alphabet
 
@@ -249,6 +285,7 @@ def run(lang: str, spec: dict) -> int:
     rng = random.Random(SEED)
     pool: dict[str, None] = {}
     attempts = 0
+    confusable = 0
     wanted = sum(quota.values())
     while len(pool) < wanted and attempts < MAX_ATTEMPTS:
         attempts += 1
@@ -258,6 +295,9 @@ def run(lang: str, spec: dict) -> int:
         if not plausible(candidate, alphabet, vowels):
             continue
         if candidate in real:
+            continue
+        if has_close_neighbour(candidate, neighbours, str(spec["alphabet"])):
+            confusable += 1
             continue
         size = len(candidate)
         if filled[size] >= quota.get(size, 0):
@@ -285,6 +325,16 @@ def run(lang: str, spec: dict) -> int:
     missed = [w for w in canaries if w not in real]
     if missed:
         problems.append(f"real-word filter does not recognise: {missed[:5]}")
+
+    # Confusability, asserted over the output rather than trusted from the loop
+    # above. This is the check that a real sitting earned: a 30% false-alarm
+    # rate turned out to be 20% of the pool sitting one edit from a word the
+    # learner knew, which the score then subtracted as if it were guessing.
+    still_close = [w for w in words if has_close_neighbour(w, neighbours, str(spec["alphabet"]))]
+    if still_close:
+        problems.append(
+            f"{len(still_close)} pseudowords one edit from a known word: {still_close[:5]}"
+        )
 
     # An independent Gegenprobe: a dictionary that was never part of the filter.
     # This is the check that found `accurse`, `flanch` and `revender` in the
@@ -319,6 +369,7 @@ def run(lang: str, spec: dict) -> int:
 
     print(f"{lang}: {len(words)} pseudowords -> {out_path.relative_to(ROOT)}")
     print(f"    checked against {len(real):,} real forms; {attempts:,} attempts")
+    print(f"    rejected {confusable:,} as one edit from a word the learner may know")
     print(f"    mean length {pool_mean:.1f} (real {real_mean:.1f})")
     print(f"    sample: {', '.join(words[:14])}")
     return 0

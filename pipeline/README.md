@@ -152,6 +152,16 @@ forms: both frequency corpora in full, the curated lists, and a dictionary word 
 language the learner knows** — an English word is no trap for someone studying Italian from
 English.
 
+### A trap must not be a near-neighbour of a real word
+
+The first real sitting produced a 30% false-alarm rate. The cause was not guessing: **20% of the
+pool sat one edit from a word in the learner's own deck** — `affetare` beside `affettare`, `atimo`
+beside `attimo`. A fluent reader does not read letter by letter, so those measured proofreading
+rather than over-claiming, and because a false alarm is subtracted, they understated the learner.
+
+Candidates are now rejected if any of the ~20,000 most frequent words, or anything in the curated
+deck, is one edit away. 0% of the pool, from 20%.
+
 ### A filter cannot audit itself
 
 The corpora alone passed `accurse`, `flanch` and `revender` into the English pool, and `unco`,

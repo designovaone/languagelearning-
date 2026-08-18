@@ -25,6 +25,7 @@ into `PLAN.md`. Nothing gets deleted just because it stopped being annoying.
 | ~~No assessment~~ | **Fixed.** Part A (yes/no with pseudoword traps) and Part C (seed FSRS) are live at `/assessment`, verified against the live database | — |
 | ~~No way to reset a learner~~ | **Fixed.** `npm run reset-learner -- --email <address>` (`--dry-run` first). Deletes progress, keeps identity; a test asserts it covers every user-owned table in the schema | — |
 | **Assessment Part B and Part D have no UI** | The measured-recall calibration (`calibration`, `calibrate` in `lib/assessment/score.ts`) and the ~15 boundary items (`buildPartB`) are written and tested, but nothing renders them. Part A plus the frequency fit already produces the estimate; Part B is a precision refinement. Re-assessment (Part D) works today only by running the reset script first | M3 follow-up |
+| **Early estimates were understated** | The first two sittings ran against a pseudoword pool where 20% of traps sat one edit from a real word the learner knew. Those were scored as over-claiming and subtracted, so both readings are **lower than the truth**. The pool is fixed; anyone assessed before 2026-08-18 should re-run it after `reset-learner` | — |
 | **The estimate is a recognition measure, not a recall one** | "I know this" is self-report about recognising a written word. It says nothing about producing the word, and the seeded cards are `recognition` only. Production and listening cards remain ungated until the drill exists | M4 |
 
 ## Working, but thinner than it looks
