@@ -30,7 +30,7 @@ Rows carry a short `source_id`; `sources.json` holds the full citation and licen
 | 2 | Lemmatise (spaCy) — needed for the frequency blend, not for the curated lists | |
 | 3 | Filter — proper nouns, numerals, fragments, profanity | |
 | 4 | **Translate** (kaikki.org / wiktextract). IT→EN 98.6%, EN→DE 90.4% | ✅ |
-| 5 | Pick primary sense — one-time AI pass | **written, not yet run** |
+| 5 | **Pick primary sense** — one-time AI pass, `google/gemini-2.5-flash-lite`, **$0.07** | ✅ |
 | 6 | Topic-cluster — one-time AI pass | |
 | 7 | Sentences (Tatoeba) | |
 | 8 | Audio (Kokoro-82M, local) | |
@@ -118,10 +118,15 @@ python3 05_primary_sense.py --lang it --limit 50 --sample 50   # eyeball first
 python3 05_primary_sense.py                            # the full pass
 ```
 
-**The model may choose; it may not invent.** Every answer is matched back against the candidates it
-was offered. Anything else is discarded and counted, and the stage refuses to write above a 10%
-fallback rate. Canary words (`casa`→house, `dog`→Hund, …) must come back right, because a wrong
-translation looks exactly like a right one.
+**The model may choose or extract; it may not invent.** An answer is accepted if it *is* one of the
+candidates, or if it appears inside one on whole-word boundaries — Wiktionary buries the real
+translation inside a definition often enough that exact matching alone put "any member of the
+Cygnus taxonomic genus" on the swan card. Either way every word came from the source. Anything else
+is discarded and counted, and the stage refuses to write above a 10% fallback rate. Canary words
+(`casa`→house, `dog`→Hund, …) must come back right, because a wrong translation looks exactly like
+a right one.
+
+**As run (2026-08-18):** 14,904 cards, 12,346 decisions, **4 fallbacks (0.03%)**, $0.07 total.
 
 `{lang}-05-primary.jsonl` is output and cache in one, checked in, resumable. `--dry-run` never
 writes — an artifact full of fallbacks looks finished and is not.

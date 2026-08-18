@@ -432,11 +432,20 @@ the first comma- or semicolon-separated equivalent. That alone turns "atmosphere
 air" into "atmosphere". Only where a real choice survives does the model see the row — which
 shortens the prompt, cuts the cost, and means a missing API key still improves the deck.
 
-**The model may choose; it may not invent.** Every answer is matched back against the candidate
-list it was offered, case- and space-insensitively. Anything else is discarded, the row falls back
-to candidate 1, and the fallback rate is reported — the stage refuses to write above 10%. A
-translation engine that quietly substitutes a plausible word is the worst failure available here,
-because its output is indistinguishable from success.
+**The model may choose or extract; it may not invent.** An answer is accepted if it *is* one of the
+candidates, or if it appears inside one on whole-word boundaries. The second rule was added after
+the first run: Wiktionary buries the real translation inside a definition often enough that exact
+matching alone put "any member of the Cygnus taxonomic genus" on the swan card, and 54 Italian rows
+fell back for that reason. Either rule keeps the guarantee that matters — every word came from the
+source text. Anything else is discarded, the row falls back to candidate 1, and the fallback rate
+is reported; the stage refuses to write above 10%. A translation engine that quietly substitutes a
+plausible word is the worst failure available here, because its output is indistinguishable from
+success.
+
+**As run, 2026-08-18.** `google/gemini-2.5-flash-lite`, 14,904 cards, 12,346 decisions, **4
+fallbacks (0.03%)**, **$0.07** total against the €1–3 estimate. 100 hand-checked words (50 per
+language) came back roughly 95% good; the residue is recorded in `ISSUES.md` rather than chased,
+since the remaining errors are Wiktionary phrasing rather than wrong senses.
 
 `{lang}-05-primary.jsonl` is both output and cache, checked in, and records the `options` each row
 was decided from, so an upstream stage 4 change re-opens only the affected rows. `--dry-run` never

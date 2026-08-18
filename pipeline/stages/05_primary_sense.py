@@ -114,22 +114,65 @@ MAX_RETRIES = 4
 #: Above this share of rows falling back, the model is not doing its job.
 MAX_FALLBACK = 0.10
 
-#: A parenthetical aside: "atmosphere (all meanings)", "(paint-) Pinsel".
-PARENS = re.compile(r"\s*\([^)]*\)\s*")
 #: Wiktionary separates alternative equivalents with these.
 SPLIT = re.compile(r"\s*[;,]\s*")
+
+#: Words that cannot stand alone as a translation. Used only to detect a comma
+#: that falls *inside* a phrase -- see `simplify`.
+FRAGMENTS = frozenset(
+    "a an the of from to in on at with by for as or and that which used not".split()
+)
+
+
+def strip_asides(text: str) -> str:
+    """Remove parenthesised asides, counting depth.
+
+    A regex cannot do this. `[^)]*` on "to water (to provide (animals) with
+    water)" matches from the first `(` to the *first* `)`, leaving the trailing
+    " with water)" behind -- which is how `abbeverare` became
+    "to water with water)".
+    """
+    out: list[str] = []
+    depth = 0
+    for char in text:
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth = max(0, depth - 1)
+        elif depth == 0:
+            out.append(char)
+    return "".join(out)
+
+
+def tidy(text: str) -> str:
+    return " ".join(text.split()).strip(" .:;,-")
 
 
 def simplify(text: str) -> str:
     """One equivalent, no asides. Deterministic, and applied before the model.
 
-    "to grow, to increase, to expand" -> "to grow"
-    "atmosphere (all meanings), air"  -> "atmosphere"
-    "(paint-) Pinsel"                 -> "Pinsel"
+    "to grow, to increase, to expand"  -> "to grow"
+    "atmosphere (all meanings), air"   -> "atmosphere"
+    "(paint-) Pinsel"                  -> "Pinsel"
+    "to water (to provide (animals) with water)" -> "to water"
+
+    A comma usually separates alternatives, but not always: in "of, from or
+    relating to Abruzzo" it sits inside a single phrase, and splitting on it
+    yields "of". So a leading segment made only of function words is treated as
+    a phrase that was cut in half, and the whole string is kept instead.
+
+    That test requires a *following* segment, which is what keeps it safe for
+    German: `hardship` -> "Not" and `in` -> "in" are correct one-word answers
+    that happen to collide with English function words.
     """
-    without_asides = PARENS.sub(" ", text)
-    first = SPLIT.split(without_asides.strip())[0]
-    return " ".join(first.split()).strip(" .:;,-")
+    without_asides = strip_asides(text)
+    parts = SPLIT.split(without_asides.strip())
+    first = tidy(parts[0])
+    if len(parts) > 1 and (
+        not first or all(word.lower() in FRAGMENTS for word in first.split())
+    ):
+        return tidy(without_asides)
+    return first
 
 
 def candidates(translations: list[str]) -> list[str]:
@@ -219,7 +262,22 @@ def parse_answer(text: str) -> dict[str, str]:
 
 
 def decide(row: dict, answer: str | None) -> tuple[str, str]:
-    """Return (primary_sense, how). The model may choose, never invent."""
+    """Return (primary_sense, how). The model may choose or extract, never invent.
+
+    Two forms of answer are accepted:
+
+    - **`model`** -- the answer is one of the candidates.
+    - **`extract`** -- the answer appears *inside* a candidate, on whole-word
+      boundaries. Wiktionary buries the real translation inside a definition
+      often enough that rejecting this is worse than allowing it: `cigno` is
+      offered "any member of the Cygnus taxonomic genus – swan", and the answer
+      wanted on the card is "swan". Requiring an exact match turned every one
+      of those into a fallback and put the whole definition on the card.
+
+    Anything else is refused. Both forms keep the guarantee that matters: every
+    word on the card came from the source text, so the model cannot quietly
+    substitute a plausible translation of its own.
+    """
     options = row["_candidates"]
     if len(options) == 1:
         return options[0], "single"
@@ -228,6 +286,13 @@ def decide(row: dict, answer: str | None) -> tuple[str, str]:
         for option in options:
             if normalise(option) == wanted:
                 return option, "model"
+        # Whole-word, so "hair" does not match "chair" and "ear" does not
+        # match "year".
+        if len(wanted) > 1:
+            pattern = re.compile(rf"(?<!\w){re.escape(wanted)}(?!\w)")
+            for option in options:
+                if pattern.search(normalise(option)):
+                    return tidy(answer), "extract"
     return options[0], "fallback"
 
 
@@ -342,10 +407,10 @@ def run(lang: str, spec: dict, args: argparse.Namespace, api_key: str | None) ->
     final = {**cache, **decided}
     kept = [final[row["lemma"]] for row in rows if row["lemma"] in final]
 
-    counts = {"model": 0, "single": 0, "fallback": 0}
+    counts = {"model": 0, "extract": 0, "single": 0, "fallback": 0}
     for row in kept:
         counts[row["decided_by"]] = counts.get(row["decided_by"], 0) + 1
-    chosen = counts["model"] + counts["fallback"]
+    chosen = counts["model"] + counts["extract"] + counts["fallback"]
     fallback_rate = counts["fallback"] / chosen if chosen else 0.0
 
     problems = []
@@ -375,7 +440,10 @@ def run(lang: str, spec: dict, args: argparse.Namespace, api_key: str | None) ->
     else:
         write_rows(out_path, list(final.values()))
         print(f"    -> {out_path.relative_to(ROOT)}  ({len(kept)} rows)")
-    print(f"    single {counts['single']}  model {counts['model']}  fallback {counts['fallback']}")
+    print(
+        f"    single {counts['single']}  model {counts['model']}  "
+        f"extract {counts['extract']}  fallback {counts['fallback']}"
+    )
 
     if args.sample:
         random.seed(args.seed)
