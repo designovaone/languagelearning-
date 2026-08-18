@@ -49,6 +49,22 @@ SOURCES: dict[str, dict[str, str]] = {
         "commercial": "yes, with attribution and share-alike",
         "note": "German translations for English lemmas - the en-from-de direction.",
     },
+    "frequencywords": {
+        "name": "FrequencyWords (OpenSubtitles 2018 frequency lists)",
+        "attribution": "Hermit Dave, from the OPUS OpenSubtitles2018 corpus",
+        "url": "https://github.com/hermitdave/FrequencyWords",
+        "license": "CC BY-SA 4.0 (content); MIT (code)",
+        "commercial": "yes, with attribution and share-alike",
+        "note": "Spoken-register frequency. One half of the stage 1b blend.",
+    },
+    "wikiwordfreq": {
+        "name": "wikipedia-word-frequency-clean (Wikipedia dump 2022-10-20, NFKC lowercased)",
+        "attribution": "Adam Nohejl; underlying text by Wikipedia contributors",
+        "url": "https://github.com/adno/wikipedia-word-frequency-clean",
+        "license": "BSD-3-Clause (script); CC BY-SA 4.0 (Wikipedia text)",
+        "commercial": "yes, with attribution and share-alike",
+        "note": "Written/encyclopedic-register frequency. The other half of the stage 1b blend.",
+    },
     "nvdb": {
         "name": "Nuovo vocabolario di base della lingua italiana (2016)",
         "attribution": "Tullio De Mauro and Isabella Chiari, with Francesca Ferrucci; machine-readable extraction by Alberto Pettarin",

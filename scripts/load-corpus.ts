@@ -13,7 +13,10 @@ import { join } from "node:path";
 
 import {
   COURSES,
+  freqIndex,
   loadCourse,
+  orderForLoad,
+  type FreqRow,
   type SourceManifest,
   type WordRow,
 } from "@/lib/corpus/load";
@@ -25,6 +28,12 @@ const ARTIFACTS = join(ROOT, "pipeline", "artifacts");
 const ARTIFACT_FOR: Record<string, string> = {
   "it-from-en": "it-04-translations.jsonl",
   "en-from-de": "en-04-translations.jsonl",
+};
+
+/** Stage 1b output: the blended frequency rank that orders each band. */
+const FREQ_FOR: Record<string, string> = {
+  "it-from-en": "it-01b-freq.jsonl",
+  "en-from-de": "en-01b-freq.jsonl",
 };
 
 function readJsonl<T>(path: string): T[] {
@@ -74,23 +83,32 @@ async function main(): Promise<number> {
       return 2;
     }
 
-    // Band first, then alphabetically. Ordering *within* a band should be by
-    // frequency (PLAN.md §5), which needs stage 1b; until then the queue will
-    // walk a band alphabetically. Recorded in ISSUES.md.
-    rows.sort((a, b) => {
-      const bandA = spec.bands.findIndex((x) => x.code === a.band);
-      const bandB = spec.bands.findIndex((x) => x.code === b.band);
-      return bandA - bandB || a.lemma.localeCompare(b.lemma);
-    });
+    // Band first, then frequency within the band (PLAN.md §5, stage 1b).
+    // The frequency artifact is required: loading without it would quietly
+    // restore the alphabetical deck, and nothing downstream would report it.
+    const freqPath = join(ARTIFACTS, FREQ_FOR[slug]);
+    let ranks;
+    try {
+      ranks = freqIndex(readJsonl<FreqRow>(freqPath));
+    } catch {
+      console.error(
+        `Missing frequency artifact ${freqPath}. ` +
+          `Run pipeline/stages/01b_frequency.py first.`,
+      );
+      return 2;
+    }
 
-    const slice = limit ? rows.slice(0, limit) : rows;
+    const ordered = orderForLoad(rows, spec, ranks);
+    const unranked = ordered.filter((r) => r.freqRank == null).length;
+    const slice = limit ? ordered.slice(0, limit) : ordered;
     const report = await loadCourse(getDb(), spec, slice, manifest);
 
     console.error(
       `${report.course}: ${report.words} words in ${report.bands} bands` +
         (report.skippedNoTranslation
           ? ` (${report.skippedNoTranslation} skipped, no translation)`
-          : ""),
+          : "") +
+        (unranked ? ` (${unranked} with no frequency rank, sorted last)` : ""),
     );
   }
 

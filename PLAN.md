@@ -318,7 +318,7 @@ breaks, where `acceca-` and `mento` are separate spans, which would otherwise ha
 
 | Layer | Source | Licence | Commercial |
 |---|---|---|---|
-| Frequency *(tie-breaker + assessment sampling)* | [FrequencyWords](https://github.com/hermitdave/FrequencyWords), blended with a second corpus | CC BY-SA 4.0 (content), MIT (code) | ✅ with attribution + share-alike |
+| Frequency *(tie-breaker + assessment sampling)* | [FrequencyWords](https://github.com/hermitdave/FrequencyWords) (OpenSubtitles 2018) blended with [wikipedia-word-frequency-clean](https://github.com/adno/wikipedia-word-frequency-clean) (Wikipedia 2022-10-20) | CC BY-SA 4.0 (content), MIT / BSD-3-Clause (code) | ✅ with attribution + share-alike |
 | Translations, senses | [kaikki.org](https://kaikki.org/) / wiktextract (Wiktionary) | CC BY-SA + GFDL | ✅ with attribution + share-alike |
 | Example sentences | [Tatoeba](https://tatoeba.org/en/downloads) | CC BY 2.0 FR, some CC0 | ✅ attribution only |
 | Extra CEFR grading *(optional)* | [Kelly](https://ssharoff.github.io/kelly/) | **CC BY-NC-SA 2.0** | ❌ **non-commercial** |
@@ -362,7 +362,7 @@ Each stage writes a checked-in intermediate artifact, so a re-run never repeats 
 | | Stage | Notes |
 |---|---|---|
 | 1 | **Curated list** ✅ | CEFR-J + Octanove (English, 9,777 lemma/pos pairs A1–C2) / NVdB (Italian, 7,249 lemmas FO/AU/AD read from the PDF) → the word set and its band. This is the spine |
-| 1b | **Frequency** | Blend FrequencyWords with a second, Wikipedia-derived corpus and average the ranks. Used to order *within* a band, to top up beyond the curated list, and for assessment sampling — **not** as the source of the deck |
+| 1b | **Frequency** ✅ | Blend FrequencyWords (OpenSubtitles, spoken) with wikipedia-word-frequency-clean (written) by the **geometric** mean of the two ranks — see "Why the geometric mean" below. Used to order *within* a band, to top up beyond the curated list, and for assessment sampling — **not** as the source of the deck |
 | 2 | **Lemmatise** | spaCy. Collapse *sono / è / siamo* into one `essere` with inflections attached. **This is the genuinely fiddly step** — expect a day on Italian clitics and German separable verbs |
 | 3 | **Filter** | Drop proper nouns, numerals, fragments, and a profanity blocklist. Much lighter than before: a curated list arrives clean |
 | 4 | **Translate** | kaikki.org → senses, part of speech, gender |
@@ -374,6 +374,43 @@ Each stage writes a checked-in intermediate artifact, so a re-run never repeats 
 
 Stages 5 and 6 are the first genuinely good use of the AI budget, run once, and cost a few euros
 together. Their output is **spot-checked by hand** — 50 random words — before loading, not trusted.
+
+### Why the geometric mean — amended at build time
+
+This section originally said stage 1b should **average the ranks**. Measured on the real corpora,
+the plain average is the wrong average, and the build uses the **geometric** mean instead.
+
+Rank distributions are heavy-tailed, so an arithmetic mean is dominated by whichever corpus rates a
+word *worst*. A word essential in one register and near-absent from the other gets buried — which
+is the single thing a two-register blend exists to prevent. In the Italian Fondamentale band:
+
+| | subtitles | wikipedia | geometric | arithmetic |
+|---|---|---|---|---|
+| `ciao` | #153 | #15,068 | **683** | 1,611 |
+| `ecco` | #188 | #7,251 | **535** | 1,195 |
+| `bosco` ("woods") | #2,719 | #3,026 | 1,143 | **986** |
+
+The arithmetic mean teaches *bosco* before *ciao*. The geometric mean does not, because it rewards
+a word that is very common in **at least one** register.
+
+Two smaller rules, each settled by looking at the data rather than by choosing a constant:
+
+- **A word in only one corpus is ranked by that corpus, with no penalty.** The single-corpus words
+  are either tokenisation artifacts (the Wikipedia list treats `-` and `'` as word-breaking, so
+  `e-mail`, `ping-pong` and `o'clock` can never appear in it) or already ranked poorly where they
+  do appear (`altoatesino` at wiki #59,598). Neither case wants a penalty.
+- **A multi-word entry takes the rank of its rarest component.** A phrase cannot be more common
+  than the least common word in it. This covers the ~150 CEFR-J phrases (`bus stop`).
+
+**As built:** 100.0% of Italian and 99.8% of English curated lemmas carry a rank. The stage refuses
+to write if coverage drops below 95%, if fewer than 90% of ranks used both corpora, or if any of a
+short canary list (`essere`, `casa`, `ciao`, `the`, `water`, …) falls outside the top 5,000.
+
+**Known consequence, accepted for now:** ordering band 1 by frequency puts function words at the
+head — Italian opens `e, di, il, la, che`. This is the failure this section warns about above, and
+it survives inside a band because band FO *contains* function words. It is not fixed here because
+the assessment (§6) seeds them as known before the drill ever runs (M3 precedes M4). Revisit with
+real data if it turns out to matter.
 
 ### Audio: generated locally, from an open-weights model
 

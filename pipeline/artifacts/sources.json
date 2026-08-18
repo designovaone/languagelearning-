@@ -7,6 +7,14 @@
     "note": "Levels A1-B2.",
     "url": "https://github.com/openlanguageprofiles/olp-en-cefrj"
   },
+  "frequencywords": {
+    "attribution": "Hermit Dave, from the OPUS OpenSubtitles2018 corpus",
+    "commercial": "yes, with attribution and share-alike",
+    "license": "CC BY-SA 4.0 (content); MIT (code)",
+    "name": "FrequencyWords (OpenSubtitles 2018 frequency lists)",
+    "note": "Spoken-register frequency. One half of the stage 1b blend.",
+    "url": "https://github.com/hermitdave/FrequencyWords"
+  },
   "nvdb": {
     "attribution": "Tullio De Mauro and Isabella Chiari, with Francesca Ferrucci; machine-readable extraction by Alberto Pettarin",
     "commercial": "extraction yes; the underlying selection is editorial - see PLAN.md §5",
@@ -22,6 +30,14 @@
     "name": "Octanove Vocabulary Profile C1/C2 v1.0",
     "note": "Levels C1-C2, distributed alongside CEFR-J.",
     "url": "https://github.com/openlanguageprofiles/olp-en-cefrj"
+  },
+  "wikiwordfreq": {
+    "attribution": "Adam Nohejl; underlying text by Wikipedia contributors",
+    "commercial": "yes, with attribution and share-alike",
+    "license": "BSD-3-Clause (script); CC BY-SA 4.0 (Wikipedia text)",
+    "name": "wikipedia-word-frequency-clean (Wikipedia dump 2022-10-20, NFKC lowercased)",
+    "note": "Written/encyclopedic-register frequency. The other half of the stage 1b blend.",
+    "url": "https://github.com/adno/wikipedia-word-frequency-clean"
   },
   "wiktextract-en": {
     "attribution": "Wiktionary contributors; extraction by Tatu Ylonen (kaikki.org)",

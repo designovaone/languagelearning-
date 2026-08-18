@@ -7,6 +7,7 @@ nothing here executes in production (PLAN.md §5).
 pip3 install -r pipeline/requirements.txt
 pipeline/stages/00_fetch_sources.sh
 cd pipeline/stages && python3 01_italian_nvdb.py && python3 01_english_cefrj.py
+python3 01b_frequency.py
 ```
 
 ## What is and isn't checked in
@@ -25,7 +26,7 @@ Rows carry a short `source_id`; `sources.json` holds the full citation and licen
 |---|---|---|
 | 0 | Fetch sources | ✅ |
 | 1 | **Curated list — the spine.** CEFR-J (English, A1–C2), NVdB (Italian, FO/AU/AD) | ✅ |
-| 1b | Frequency blend — tie-breaker within a band, not the source of the deck | |
+| 1b | **Frequency blend** — tie-breaker within a band, not the source of the deck | ✅ |
 | 2 | Lemmatise (spaCy) — needed for the frequency blend, not for the curated lists | |
 | 3 | Filter — proper nouns, numerals, fragments, profanity | |
 | 4 | **Translate** (kaikki.org / wiktextract). IT→EN 98.6%, EN→DE 90.4% | ✅ |
@@ -74,3 +75,25 @@ translations are ranked by recurrence, then by earliest sense, then single word 
 
 That is a ranking, not a decision — picking the one primary sense is stage 5's job. It just
 gets a far better shortlist to choose from.
+
+
+## Stage 1b blends two corpora that disagree on purpose
+
+Subtitles know `ciao`, `beh` and `domani`; Wikipedia knows `provincia` and `febbraio`. Neither
+register alone is what a learner needs, so the stage takes the **geometric** mean of the two ranks.
+
+The plain average would be wrong, and measurably so: it is dominated by whichever corpus rates the
+word worst, so `ciao` (subtitles #153, wikipedia #15,068) lands at 1,611 — behind `bosco`
+("woods"). The geometric mean puts it at 683. See PLAN.md §5, "Why the geometric mean".
+
+Two rules settled by looking at the data rather than by picking a constant:
+
+- **Missing from one corpus → use the other, no penalty.** The Wikipedia list treats `-` and `'`
+  as word-breaking, so `e-mail`, `ping-pong` and `o'clock` can never appear in it. Penalising a
+  tokenisation artifact would be simply wrong. The genuinely register-bound words (`altoatesino`)
+  already carry a poor rank where they do appear.
+- **A phrase takes the rank of its rarest component** — it cannot be more common than that.
+
+The stage refuses to write if coverage falls under 95%, if under 90% of ranks used both corpora, or
+if a canary word (`essere`, `casa`, `ciao`, `the`, `water`, …) falls outside the top 5,000. A wrong
+ranking still looks exactly like a ranking, so it needs a check that knows what the answer is.

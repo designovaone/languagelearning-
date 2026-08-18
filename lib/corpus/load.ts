@@ -108,6 +108,64 @@ export function wordId(courseSlug: string, lemma: string): string {
   return `${courseSlug}:${lemma}`;
 }
 
+/** A row of a `*-01b-freq.jsonl` artifact (PLAN.md §5, stage 1b). */
+export type FreqRow = {
+  lemma: string;
+  freq_rank: number;
+};
+
+/**
+ * Lemma → blended frequency rank.
+ *
+ * Lowercased on both sides: the frequency corpora are NFKC-lowercased, while
+ * the curated lists keep their own casing. Matching without this drops every
+ * capitalised lemma silently, which is the shape of bug this project keeps
+ * finding — a lookup that succeeds for the wrong reason.
+ */
+export function freqIndex(rows: FreqRow[]): Map<string, number> {
+  const index = new Map<string, number>();
+  for (const row of rows) {
+    index.set(row.lemma.toLowerCase(), row.freq_rank);
+  }
+  return index;
+}
+
+/**
+ * Band first, then frequency within the band, then alphabetically (PLAN.md §5,
+ * "how the layers combine").
+ *
+ * A word with no rank sorts to the end of its band rather than the start.
+ * `Infinity` rather than `-1` for exactly that reason: an unranked word is not
+ * the most common word in the language.
+ */
+export function orderForLoad(
+  rows: WordRow[],
+  spec: CourseSpec,
+  ranks: Map<string, number>,
+): WordRow[] {
+  const bandOrder = new Map(spec.bands.map((b, i) => [b.code, i]));
+  return [...rows]
+    .map((row) => ({
+      ...row,
+      freqRank: ranks.get(row.lemma.toLowerCase()) ?? null,
+    }))
+    .sort((a, b) => {
+      const band =
+        (bandOrder.get(a.band) ?? Number.MAX_SAFE_INTEGER) -
+        (bandOrder.get(b.band) ?? Number.MAX_SAFE_INTEGER);
+      if (band !== 0) return band;
+      // MAX_SAFE_INTEGER, not Infinity: two unranked words would give
+      // `Infinity - Infinity` = NaN, and a comparator that returns NaN leaves
+      // the sort undefined — so the alphabetical fallback silently stops
+      // happening for exactly the rows that need it.
+      const rank =
+        (a.freqRank ?? Number.MAX_SAFE_INTEGER) -
+        (b.freqRank ?? Number.MAX_SAFE_INTEGER);
+      if (rank !== 0) return rank;
+      return a.lemma.localeCompare(b.lemma);
+    });
+}
+
 function attributionFor(
   manifest: SourceManifest,
   sourceId: string,
